@@ -25,7 +25,7 @@ func init() {
 	flightAgent := agents.NewBaseLlmAgent(
 		"FlightAgent",
 		"A sub-agent that finds flights.",
-		"gemini-1.5-pro-latest",
+		"gemini-2.5-flash",
 		flightInstruction,
 		geminiProvider,
 		[]tools.Tool{example.NewFlightTool()},
@@ -37,7 +37,7 @@ func init() {
 	hotelAgent := agents.NewBaseLlmAgent(
 		"HotelAgent",
 		"A sub-agent that finds hotels.",
-		"gemini-1.5-pro-latest",
+		"gemini-2.5-flash",
 		hotelInstruction,
 		geminiProvider,
 		[]tools.Tool{example.NewHotelTool()},
@@ -50,7 +50,7 @@ func init() {
 	tripPlannerAgent := agents.NewParallelAgent(
 		"parallel_trip_planner",
 		"A workflow that finds flights and hotels in parallel and synthesizes a travel plan.",
-		"gemini-1.5-pro-latest",
+		"gemini-2.5-flash",
 		synthesisInstruction,
 		geminiProvider,
 		[]interfaces.LlmAgent{flightAgent, hotelAgent},

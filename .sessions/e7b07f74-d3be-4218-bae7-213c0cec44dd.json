@@ -1,0 +1,43 @@
+{
+  "id": "e7b07f74-d3be-4218-bae7-213c0cec44dd",
+  "agent_name": "helloworld",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi!"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello there!\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "How are you doing?"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "I'm doing well, thank you for asking! How are you?\n"
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "I'm doing well, thank you for asking! How are you?\n",
+    "last_user_message": "How are you doing?"
+  }
+}

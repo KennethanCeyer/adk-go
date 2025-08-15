@@ -1,0 +1,27 @@
+{
+  "id": "6e86a7db-5ec7-45f0-ac2f-88474b0296ee",
+  "agent_name": "looping_guesser",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "My first guess, 50, was too high. I will guess 25 next."
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "My first guess, 50, was too high. I will guess 25 next.",
+    "last_user_message": "Hi"
+  }
+}

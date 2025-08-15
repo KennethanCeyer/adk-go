@@ -3,7 +3,9 @@ package agents
 import (
 	"context"
 	"fmt"
-	"log"
+	"sync"
+
+	"github.com/KennethanCeyer/adk-go/agents/invocation"
 
 	"github.com/KennethanCeyer/adk-go/agents/interfaces"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
@@ -53,7 +55,7 @@ func (a *BaseLlmAgent) GetName() string { return a.name }
 // GetDescription returns the agent's description.
 func (a *BaseLlmAgent) GetDescription() string { return a.description }
 
-// GetModelIdentifier returns the model identifier (e.g., "gemini-1.5-flash-latest").
+// GetModelIdentifier returns the model identifier (e.g., "gemini-2.5-flash").
 func (a *BaseLlmAgent) GetModelIdentifier() string { return a.modelIdentifier }
 
 // GetSystemInstruction returns the system instruction message for the agent.
@@ -71,7 +73,8 @@ func (a *BaseLlmAgent) GetTools() []tools.Tool {
 // GetLLMProvider returns the LLM provider used by the agent.
 func (a *BaseLlmAgent) GetLLMProvider() llmproviders.LLMProvider { return a.llmProvider }
 
-// Process handles the main interaction loop with the LLM.
+// Process handles the main interaction loop with the LLM, including tool execution.
+// It will continue to call the LLM with tool results until a final text response is generated.
 func (a *BaseLlmAgent) Process(
 	ctx context.Context,
 	history []modelstypes.Message,
@@ -81,81 +84,91 @@ func (a *BaseLlmAgent) Process(
 		return nil, fmt.Errorf("agent '%s' has no LLM provider configured", a.name)
 	}
 
-	currentHistory := history
+	turnHistory := make([]modelstypes.Message, len(history))
+	copy(turnHistory, history)
+
 	currentMessage := latestMessage
 
-	// Loop to handle potential tool calls. A limit is set to prevent infinite loops.
-	const maxToolCalls = 5
+	// Loop for potential tool calls. Set a max number of tool calls per turn to avoid infinite loops.
+	const maxToolCalls = 10 // Increased to support the looping_guesser example
 	for i := 0; i < maxToolCalls; i++ {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-		}
-
 		llmResponse, err := a.llmProvider.GenerateContent(
 			ctx,
 			a.modelIdentifier,
 			a.systemInstruction,
 			a.GetTools(),
-			currentHistory,
+			turnHistory,
 			currentMessage,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("LLM interaction failed: %w", err)
 		}
 
-		if llmResponse == nil || len(llmResponse.Parts) == 0 {
-			return nil, fmt.Errorf("LLM returned an empty response")
+		turnHistory = append(turnHistory, currentMessage)
+		if llmResponse != nil {
+			turnHistory = append(turnHistory, *llmResponse)
+		} else {
+			// Should not happen, but handle defensively
+			return nil, fmt.Errorf("LLM returned a nil response")
 		}
 
-		// Check if the response contains a function call.
-		// We assume the first part will be the function call if one exists.
-		if llmResponse.Parts[0].FunctionCall == nil {
-			// No tool call, return the text response directly.
+		// A single model response can request multiple tool calls.
+		var functionCalls []*modelstypes.FunctionCall
+		for _, part := range llmResponse.Parts {
+			if part.FunctionCall != nil {
+				functionCalls = append(functionCalls, part.FunctionCall)
+			}
+		}
+
+		// If there are no function calls, the agent's turn is over. Return the text response.
+		if len(functionCalls) == 0 {
 			return llmResponse, nil
 		}
 
-		// Append the LLM's request to use a tool and the current user message to the history.
-		currentHistory = append(currentHistory, currentMessage, *llmResponse)
+		var wg sync.WaitGroup
+		toolResponseParts := make(chan modelstypes.Part, len(functionCalls))
 
-		// Handle the function call
-		functionCall := llmResponse.Parts[0].FunctionCall
-		tool, exists := a.tools[functionCall.Name]
-		if !exists {
-			errText := fmt.Sprintf("tool '%s' not found", functionCall.Name)
-			log.Println(errText)
-			// Prepare a message to send back to the LLM about the error
-			currentMessage = modelstypes.Message{
-				Role: "function",
-				Parts: []modelstypes.Part{{
-					FunctionResponse: &modelstypes.FunctionResponse{Name: functionCall.Name, Response: map[string]any{"error": errText}},
-				}},
-			}
-			continue // Go back to the LLM with the error message
+		invocation.SendInternalLog(ctx, "Agent '%s' is calling %d tools in parallel...", a.name, len(functionCalls))
+
+		for _, fc := range functionCalls {
+			wg.Add(1)
+			go func(call *modelstypes.FunctionCall) {
+				defer wg.Done()
+				invocation.SendInternalLog(ctx, "  - Calling tool '%s'", call.Name)
+				toolToExecute, found := a.tools[call.Name]
+				var responsePart modelstypes.Part
+
+				if !found {
+					errText := fmt.Sprintf("tool '%s' not found", call.Name)
+					invocation.SendInternalLog(ctx, "  - Error: %s", errText)
+					responsePart = modelstypes.Part{FunctionResponse: &modelstypes.FunctionResponse{Name: call.Name, Response: map[string]any{"error": errText}}}
+				} else {
+					toolResult, err := toolToExecute.Execute(ctx, call.Args)
+					if err != nil {
+						errText := fmt.Sprintf("tool '%s' execution failed: %v", toolToExecute.Name(), err)
+						invocation.SendInternalLog(ctx, "  - Error: %s", errText)
+						responsePart = modelstypes.Part{FunctionResponse: &modelstypes.FunctionResponse{Name: call.Name, Response: map[string]any{"error": errText}}}
+					} else {
+						invocation.SendInternalLog(ctx, "  - Tool '%s' executed successfully", toolToExecute.Name())
+						responsePart = modelstypes.Part{FunctionResponse: &modelstypes.FunctionResponse{Name: call.Name, Response: toolResult}}
+					}
+				}
+				toolResponseParts <- responsePart
+			}(fc)
 		}
 
-		log.Printf("Agent '%s' executing tool '%s' with args: %v", a.name, tool.Name(), functionCall.Args)
-		toolResult, err := tool.Execute(ctx, functionCall.Args)
-		if err != nil {
-			errText := fmt.Sprintf("tool '%s' execution failed: %v", tool.Name(), err)
-			log.Println(errText)
-			currentMessage = modelstypes.Message{
-				Role: "function",
-				Parts: []modelstypes.Part{{
-					FunctionResponse: &modelstypes.FunctionResponse{Name: functionCall.Name, Response: map[string]any{"error": errText}},
-				}},
-			}
-			continue // Go back to the LLM with the error message
+		wg.Wait()
+		close(toolResponseParts)
+
+		var collectedParts []modelstypes.Part
+		for part := range toolResponseParts {
+			collectedParts = append(collectedParts, part)
 		}
 
-		// Prepare the tool's result to send back to the LLM.
-		currentMessage = modelstypes.Message{
-			Role:  "function",
-			Parts: []modelstypes.Part{{FunctionResponse: &modelstypes.FunctionResponse{Name: functionCall.Name, Response: toolResult}}},
-		}
-		// Loop again to get the final text response from the LLM based on the tool result.
+		toolResponseMessage := modelstypes.Message{Role: "function", Parts: collectedParts}
+
+		currentMessage = toolResponseMessage
 	}
 
-	return nil, fmt.Errorf("agent exceeded maximum tool call iterations (%d)", maxToolCalls)
+	return nil, fmt.Errorf("exceeded maximum tool calls (%d) in a single turn", maxToolCalls)
 }

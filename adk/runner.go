@@ -10,23 +10,27 @@ import (
 
 	"github.com/KennethanCeyer/adk-go/agents/interfaces"
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
+	"github.com/KennethanCeyer/adk-go/sessions"
 )
 
 type SimpleCLIRunner struct {
 	AgentToRun interfaces.LlmAgent
+	Session    *sessions.Session
 }
 
-func NewSimpleCLIRunner(agent interfaces.LlmAgent) (*SimpleCLIRunner, error) {
+func NewSimpleCLIRunner(agent interfaces.LlmAgent, sess *sessions.Session) (*SimpleCLIRunner, error) {
 	if agent == nil {
 		return nil, fmt.Errorf("agent cannot be nil")
 	}
-	return &SimpleCLIRunner{AgentToRun: agent}, nil
+	if sess == nil {
+		return nil, fmt.Errorf("session cannot be nil")
+	}
+	return &SimpleCLIRunner{AgentToRun: agent, Session: sess}, nil
 }
 
 func (r *SimpleCLIRunner) Start(ctx context.Context) {
 	r.printAgentInfo()
 
-	var history []modelstypes.Message
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
@@ -62,23 +66,21 @@ func (r *SimpleCLIRunner) Start(ctx context.Context) {
 
 		userMessage := modelstypes.Message{Role: "user", Parts: []modelstypes.Part{{Text: &userInputText}}}
 
-		currentHistoryForCall := make([]modelstypes.Message, len(history))
-		copy(currentHistoryForCall, history)
-
-		agentResponse, err := r.AgentToRun.Process(ctx, currentHistoryForCall, userMessage)
+		agentResponse, err := r.AgentToRun.Process(ctx, r.Session.History, userMessage)
 		if err != nil {
 			if ctx.Err() != nil {
 				log.Printf("Agent Process call failed due to context cancellation: %v", err)
 				return
 			}
 			fmt.Printf("[%s-error]: I encountered an issue: %v\n", r.AgentToRun.GetName(), err)
-			history = append(history, userMessage)
+			r.Session.History = append(r.Session.History, userMessage)
+			sessions.Save(r.Session)
 			continue
 		}
 
-		history = append(history, userMessage)
+		r.Session.History = append(r.Session.History, userMessage)
 		if agentResponse != nil {
-			history = append(history, *agentResponse)
+			r.Session.History = append(r.Session.History, *agentResponse)
 		}
 
 		if agentResponse != nil && len(agentResponse.Parts) > 0 {
@@ -97,9 +99,12 @@ func (r *SimpleCLIRunner) Start(ctx context.Context) {
 		}
 
 		const maxHistoryTurns = 10
-		if len(history) > maxHistoryTurns*2 {
-			history = history[len(history)-(maxHistoryTurns*2):]
+		if len(r.Session.History) > maxHistoryTurns*2 {
+			r.Session.History = r.Session.History[len(r.Session.History)-(maxHistoryTurns*2):]
 		}
+
+		// Save the session state after each turn.
+		sessions.Save(r.Session)
 	}
 }
 

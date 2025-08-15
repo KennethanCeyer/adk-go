@@ -12,11 +12,15 @@ import (
 
 	"github.com/KennethanCeyer/adk-go/adk"
 	"github.com/KennethanCeyer/adk-go/examples"
+	"github.com/KennethanCeyer/adk-go/sessions"
 	"github.com/KennethanCeyer/adk-go/web"
 
 	// Import example packages to trigger their init() functions for agent registration.
 	// The blank identifier `_` is used because we only need the side effects of the import.
+	_ "github.com/KennethanCeyer/adk-go/examples/file_based_chat"
+	_ "github.com/KennethanCeyer/adk-go/examples/financial_analyst"
 	_ "github.com/KennethanCeyer/adk-go/examples/helloworld"
+	_ "github.com/KennethanCeyer/adk-go/examples/looping_guesser"
 	_ "github.com/KennethanCeyer/adk-go/examples/parallel_trip_planner"
 	_ "github.com/KennethanCeyer/adk-go/examples/sequential_weather"
 )
@@ -40,12 +44,6 @@ func main() {
 		runCmd(os.Args[2:])
 	case "web":
 		webCmd(os.Args[2:])
-	// case "web":
-	// 	// Placeholder for 'adk web'
-	// 	fmt.Println("'web' command not yet implemented.")
-	// case "eval":
-	// 	// Placeholder for 'adk eval'
-	// 	fmt.Println("'eval' command not yet implemented.")
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		printUsage()
@@ -58,8 +56,7 @@ func printUsage() {
 	fmt.Println("\nAvailable commands:")
 	fmt.Println("  run                Run an agent in the command line")
 	fmt.Println("  web                Start a web server with a UI for an agent")
-	// fmt.Println("  web                Start the ADK web UI")
-	// fmt.Println("  eval               Run evaluations for an agent")
+	fmt.Println("\nRun 'adk <command> -h' for more information on a specific command.")
 	fmt.Println("\nAvailable agents for 'run' and 'web' commands:")
 	fmt.Printf("  %s\n", strings.Join(examples.ListAgents(), ", "))
 }
@@ -67,10 +64,25 @@ func printUsage() {
 func runCmd(args []string) {
 	runFlagSet := flag.NewFlagSet("run", flag.ContinueOnError)
 	agentName := newAgentFlag(runFlagSet)
+	sessionID := runFlagSet.String("session-id", "", "ID of a previous session to resume.")
 
 	err := runFlagSet.Parse(args)
 	if err != nil {
 		log.Fatalf("Error parsing flags for run command: %v", err)
+	}
+
+	var currentSession *sessions.Session
+	if *sessionID != "" {
+		log.Printf("Attempting to resume session '%s'...", *sessionID)
+		currentSession, err = sessions.Get(*sessionID)
+		if err != nil {
+			log.Fatalf("Error resuming session: %v", err)
+		}
+		log.Printf("Successfully resumed session '%s'.", *sessionID)
+	} else {
+		currentSession = sessions.GetOrCreate(*agentName, *sessionID) // Create a new session
+		log.Printf("Started new session with ID: %s", currentSession.ID)
+		log.Println("To resume this session later, use: -session-id=" + currentSession.ID)
 	}
 
 	log.Printf("Loading '%s' agent...", *agentName)
@@ -88,7 +100,7 @@ func runCmd(args []string) {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	runner, err := adk.NewSimpleCLIRunner(agentToRun)
+	runner, err := adk.NewSimpleCLIRunner(agentToRun, currentSession)
 	if err != nil {
 		log.Fatalf("Failed to create agent runner: %v", err)
 	}
@@ -125,15 +137,13 @@ func newAgentFlag(fs *flag.FlagSet) *string {
 
 func webCmd(args []string) {
 	webFlagSet := flag.NewFlagSet("web", flag.ContinueOnError)
-	agentName := newAgentFlag(webFlagSet)
 	port := webFlagSet.String("port", "8080", "Port to run the web server on")
 
 	err := webFlagSet.Parse(args)
 	if err != nil {
-		// This will trigger if flags are invalid, e.g., -port=abc
 		log.Fatalf("Error parsing flags for web command: %v", err)
 	}
 
 	addr := ":" + *port
-	web.StartServer(addr, *agentName)
+	web.StartServer(addr)
 }

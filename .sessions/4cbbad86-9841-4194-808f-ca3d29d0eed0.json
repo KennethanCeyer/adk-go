@@ -1,0 +1,267 @@
+{
+  "id": "4cbbad86-9841-4194-808f-ca3d29d0eed0",
+  "agent_name": "looping_guesser",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "My first guess is 50.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 50
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "no"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low. My next guess is 75.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 75
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "no"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too high. My next guess is 63.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 63
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "up"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low.  My next guess is 69.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 69
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "up"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low. My next guess is 72.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 72
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "up"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low. My next guess is 74.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 74
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "up"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low. My next guess is 73.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 73
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "up"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low. My next guess is 71.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 71
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "up"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low. My next guess is 67.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 67
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "up"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low. This is my last guess: 68.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 68
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "up"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Too low. I have failed to guess the number in 10 tries.  I admit defeat.\n"
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "Too low. I have failed to guess the number in 10 tries.  I admit defeat.\n",
+    "last_user_message": "up"
+  }
+}

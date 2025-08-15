@@ -1,0 +1,43 @@
+{
+  "id": "2608f390-834d-4fe5-933b-0533a59829b4",
+  "agent_name": "parallel_trip_planner",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "It seems we're missing some key information about your destination!  I need to know where you'd like to travel to before I can create a travel plan. Could you please tell me where you want to go?\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "I want to go to Tokyo"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Okay, I see you're planning a trip!  I'm still missing some key information to make a complete travel plan summary.  You've provided the format for the dates, but not the dates themselves.  I need both your desired travel date (for flights) and your desired check-in date (for hotels) to create a helpful summary.  Please provide the actual dates so I can help you put together your itinerary.\n"
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "Okay, I see you're planning a trip!  I'm still missing some key information to make a complete travel plan summary.  You've provided the format for the dates, but not the dates themselves.  I need both your desired travel date (for flights) and your desired check-in date (for hotels) to create a helpful summary.  Please provide the actual dates so I can help you put together your itinerary.\n",
+    "last_user_message": "I want to go to Tokyo"
+  }
+}

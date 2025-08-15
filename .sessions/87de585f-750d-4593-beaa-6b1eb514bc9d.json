@@ -1,0 +1,35 @@
+{
+  "id": "87de585f-750d-4593-beaa-6b1eb514bc9d",
+  "agent_name": "looping_guesser",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "My first guess is 50.\n"
+        },
+        {
+          "functionCall": {
+            "name": "check_guess",
+            "args": {
+              "guess": 50
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "My first guess is 50.\n",
+    "last_user_message": "Hi"
+  }
+}

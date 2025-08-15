@@ -28,7 +28,7 @@ func init() {
 	agent := agents.NewBaseLlmAgent(
 		"HelloWorldAgent",
 		"A simple agent that can roll a die using a tool.",
-		"gemini-1.5-pro-latest",
+		"gemini-2.5-flash",
 		systemInstruction,
 		geminiProvider,
 		agentTools,

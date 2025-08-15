@@ -3,9 +3,9 @@ package agents
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/KennethanCeyer/adk-go/agents/interfaces"
+	"github.com/KennethanCeyer/adk-go/agents/invocation"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
 	"github.com/KennethanCeyer/adk-go/tools"
@@ -43,11 +43,13 @@ func (a *SequentialAgent) Process(
 	currentContent := latestContent
 	var finalResponse *modelstypes.Message
 
+	invocation.SendInternalLog(ctx, "Starting sequential execution for %d sub-agents...", len(a.SubAgents))
 	for i, subAgent := range a.SubAgents {
-		log.Printf("--- Running sub-agent (%d/%d): %s ---\n", i+1, len(a.SubAgents), subAgent.GetName())
+		invocation.SendInternalLog(ctx, "Running sub-agent (%d/%d): %s", i+1, len(a.SubAgents), subAgent.GetName())
 		response, err := subAgent.Process(ctx, history, currentContent)
 		if err != nil { return nil, fmt.Errorf("sub-agent '%s' failed: %w", subAgent.GetName(), err) }
 		if response != nil { currentContent = *response; finalResponse = response }
 	}
+	invocation.SendInternalLog(ctx, "Sequential execution finished.")
 	return finalResponse, nil
 }

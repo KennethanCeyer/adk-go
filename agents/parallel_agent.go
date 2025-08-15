@@ -3,11 +3,11 @@ package agents
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 
 	"github.com/KennethanCeyer/adk-go/agents/interfaces"
+	"github.com/KennethanCeyer/adk-go/agents/invocation"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
 	"github.com/KennethanCeyer/adk-go/tools"
@@ -52,11 +52,12 @@ func (a *ParallelAgent) Process(
 	resultsChan := make(chan *modelstypes.Message, len(a.SubAgents))
 	errChan := make(chan error, len(a.SubAgents))
 
+	invocation.SendInternalLog(ctx, "Starting parallel execution for %d sub-agents...", len(a.SubAgents))
 	for _, subAgent := range a.SubAgents {
 		wg.Add(1)
 		go func(sa interfaces.LlmAgent) {
 			defer wg.Done()
-			log.Printf("--- Running sub-agent in parallel: %s ---\n", sa.GetName())
+			invocation.SendInternalLog(ctx, "Running sub-agent in parallel: %s", sa.GetName())
 			// Each sub-agent gets the same initial history and input.
 			response, err := sa.Process(ctx, history, latestContent)
 			if err != nil {
@@ -86,7 +87,7 @@ func (a *ParallelAgent) Process(
 		}
 	}
 
-	log.Println("--- Synthesizing results from parallel sub-agents ---")
+	invocation.SendInternalLog(ctx, "Synthesizing results from %d parallel sub-agents...", len(a.SubAgents))
 	synthesisPromptText := fmt.Sprintf("The following information was gathered concurrently:\n\n---\n%s\n---\n\nBased on this information, provide a comprehensive summary to the user.", strings.Join(subAgentResults, "\n---\n"))
 	synthesisMessage := modelstypes.Message{Role: "user", Parts: []modelstypes.Part{{Text: &synthesisPromptText}}}
 

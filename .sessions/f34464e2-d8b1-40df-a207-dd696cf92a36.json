@@ -1,0 +1,21 @@
+{
+  "ID": "f34464e2-d8b1-40df-a207-dd696cf92a36",
+  "History": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hi there!\n"
+        }
+      ]
+    }
+  ]
+}

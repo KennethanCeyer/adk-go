@@ -1,0 +1,22 @@
+{
+  "id": "26c06a4b-b29a-4342-8d7a-dafc91fb0d0a",
+  "agent_name": "looping_guesser",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": null
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_user_message": "Hi"
+  }
+}

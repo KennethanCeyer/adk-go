@@ -1,0 +1,38 @@
+{
+  "id": "22f0727a-5ea3-4d49-8122-8c88f101a8cb",
+  "agent_name": "parallel_trip_planner",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "It seems we're missing some key information about your destination!  I need a little more detail to create a travel plan.  Could you tell me where you'd like to go?  Once I know that, I can help you find flights and hotels and put together a great itinerary.\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Could you make a reservation from 2025.09.01 to 2025.09.30. I want to go Seoul."
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "It looks like you're planning a trip to Seoul!  Just to confirm, you're looking to travel sometime between September 1st, 2025 and September 30th, 2025.  I have a room booked for you at the Cosmic Inn starting on September 1st, 2025 for $250 per night.  \n\nCould you please provide a specific date in September for your arrival so I can finalize the booking and look for flight options?  Once I have that, I can put together a complete travel plan for you.\n"
+        }
+      ]
+    }
+  ]
+}

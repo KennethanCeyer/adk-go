@@ -1,0 +1,59 @@
+{
+  "id": "cc134a32-5b04-420c-bb74-c47b7685c991",
+  "agent_name": "financial_analyst",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hi there! How can I assist you today?\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Could you give me an information of NVIDIA?"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "I can help you with that! The current stock price of NVIDIA (NVDA) is 196.50 USD. \n\nIs there anything else you would like to know about NVIDIA, perhaps some recent news?\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Yes"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Here's a summary of the latest information for NVIDIA (NVDA):\n\n**Stock Price:**\n*   Current Price: $196.50 USD\n\n**Recent News:**\n*   NVIDIA announced record Q3 earnings, leading to a surge in its stock.\n*   A recent new product launch from NVIDIA has received positive reviews.\n*   Following an innovation showcase, analysts have upgraded NVIDIA's stock to 'Buy'.\n\nIn conclusion, NVIDIA is showing strong performance with record earnings, positive product reception, and favorable analyst ratings."
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "Here's a summary of the latest information for NVIDIA (NVDA):\n\n**Stock Price:**\n*   Current Price: $196.50 USD\n\n**Recent News:**\n*   NVIDIA announced record Q3 earnings, leading to a surge in its stock.\n*   A recent new product launch from NVIDIA has received positive reviews.\n*   Following an innovation showcase, analysts have upgraded NVIDIA's stock to 'Buy'.\n\nIn conclusion, NVIDIA is showing strong performance with record earnings, positive product reception, and favorable analyst ratings.",
+    "last_user_message": "Yes"
+  }
+}

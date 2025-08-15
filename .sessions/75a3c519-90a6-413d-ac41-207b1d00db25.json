@@ -1,0 +1,27 @@
+{
+  "id": "75a3c519-90a6-413d-ac41-207b1d00db25",
+  "agent_name": "financial_analyst",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello! How can I help you today?\n"
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "Hello! How can I help you today?\n",
+    "last_user_message": "Hi"
+  }
+}

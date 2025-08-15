@@ -1,0 +1,43 @@
+{
+  "id": "794b9425-0486-4bf0-a2c6-4d64acb5393d",
+  "agent_name": "sequential_weather",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "How are you doing?\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "All good!"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Great to hear! Anything I can help with?\n"
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "Great to hear! Anything I can help with?\n",
+    "last_user_message": "All good!"
+  }
+}

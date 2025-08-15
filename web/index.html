@@ -1,147 +1,1113 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ADK-Go Web UI</title>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
     <style>
+      /* Color Palette */
+      :root {
+        --sidebar-bg: #f8f9fa;
+        --border-color: #dee2e6;
+        --body-bg: #ffffff;
+        --text-primary: #212121;
+        --text-secondary: #6c757d;
+        --accent-color: #0d6efd;
+        --accent-text: #ffffff;
+        --user-msg-bg: #e9f5ff;
+        --agent-msg-bg: #f1f3f5;
+        --tool-call-bg: #fff3cd;
+        --tool-response-bg: #d1e7dd;
+        --internal-log-bg: #f8f9fa;
+        --tab-active-border: #0d6efd;
+      }
+
+      /* General Styles */
       body {
-        font-family: sans-serif;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif;
         margin: 0;
-        padding: 20px;
-        background-color: #f4f4f4;
+        background-color: var(--body-bg);
+        color: var(--text-primary);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
       }
-      #chat-container {
-        max-width: 800px;
-        margin: auto;
-        background: white;
-        border: 1px solid #ddd;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+      /* --- Sidebar --- */
+      .sidebar {
+        width: 320px; /* Default width */
+        flex-shrink: 0; /* Prevent shrinking on window resize */
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
       }
-      #header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #ddd;
-        background-color: #fafafa;
-        color: #333;
+      .resizer {
+        flex-shrink: 0;
+        width: 5px;
+        background: transparent;
+        cursor: col-resize;
+        user-select: none; /* Prevent text selection during drag */
+        transition: background-color 0.2s ease;
       }
-      #header h1 {
+      .resizer:hover {
+        background-color: var(--accent-color);
+      }
+      .sidebar-scroll-container {
+        flex-grow: 1;
+        overflow-y: auto;
+      }
+
+      .sidebar-header {
+        padding: 1.5rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        flex-shrink: 0;
+      }
+      .sidebar-header h2 {
         margin: 0;
-        font-size: 1.2em;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
       }
-      #messages {
-        list-style-type: none;
+
+      .agent-nav {
+        overflow-y: auto;
+        padding: 0.5rem 0;
+      }
+
+      .agent-nav a {
+        display: flex;
+        padding: 0.75rem 1rem;
+        text-decoration: none;
+        color: var(--text-primary);
+        border-left: 3px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .agent-nav a:hover {
+        background-color: #e9ecef;
+      }
+
+      .agent-nav a.active {
+        background-color: #e0eafc;
+        border-left-color: var(--accent-color);
+        font-weight: 600;
+      }
+
+      .session-header {
+        padding: 1rem 1rem 0.5rem;
+        border-bottom: none;
+      }
+
+      .session-header h3 {
         margin: 0;
-        padding: 20px;
-        height: 60vh;
-        overflow-y: scroll;
-        border-bottom: 1px solid #ddd;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
       }
-      #messages li {
-        padding: 8px 12px;
-        margin-bottom: 10px;
-        border-radius: 7px;
-        line-height: 1.4;
-        max-width: 70%;
-        word-wrap: break-word;
+
+      .session-nav a {
+        display: block;
+        padding: 0.5rem 1rem 0.5rem 1.5rem;
+        text-decoration: none;
+        color: var(--text-secondary);
+        border-left: 3px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.85rem;
       }
-      .user-message {
-        background-color: #dcf8c6;
+
+      .session-nav a:hover {
+        background-color: #e9ecef;
+      }
+
+      .session-nav a.active {
+        background-color: #e0eafc;
+        border-left-color: var(--accent-color);
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid var(--border-color);
+        flex-shrink: 0;
+      }
+
+      #new-chat-btn {
+        width: 100%;
+        padding: 0.75rem;
+        background-color: var(--accent-color);
+        color: var(--accent-text);
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      #new-chat-btn:hover {
+        opacity: 0.9;
+      }
+
+      /* --- Chat Area --- */
+      .chat-area {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .chat-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        background-color: #fff;
+      }
+      .chat-header h1 {
+        margin: 0;
+        font-size: 1.25rem;
+      }
+
+      .chat-header .agent-meta {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+      }
+
+      #session-info {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+      }
+
+      .messages-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+      }
+      .message {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        max-width: 80%;
+      }
+
+      .message.user-message {
         margin-left: auto;
+        flex-direction: row-reverse;
       }
-      .agent-message {
-        background-color: #f1f0f0;
+
+      .message.agent-message {
+        margin-right: auto;
+      }
+
+      .message-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: var(--agent-msg-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: var(--text-secondary);
+      }
+
+      .user-message .message-avatar {
+        background-color: var(--user-msg-bg);
+      }
+
+      .message-body {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .message-sender {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+      }
+
+      .user-message .message-sender {
+        text-align: right;
+      }
+
+      .message-content {
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        line-height: 1.5;
+      }
+      .user-message .message-content {
+        background-color: var(--accent-color);
+        color: var(--accent-text);
+        border-bottom-right-radius: 2px;
+      }
+      .agent-message .message-content {
+        border-bottom-left-radius: 2px;
+      }
+      .tool-call,
+      .tool-response {
+        padding: 0;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        font-size: 0.9em;
+        margin-top: 0.5rem;
+      }
+      .tool-header {
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #664d03;
+        background-color: var(--tool-call-bg);
+        border-bottom: 1px solid #ffecb5;
+      }
+      .tool-response .tool-header {
+        color: #0f5132;
+        background-color: var(--tool-response-bg);
+        border-bottom: 1px solid #badbcc;
+      }
+      .tool-body {
+        padding: 1rem;
+        background-color: #fff;
+      }
+      .tool-body pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: monospace;
+      }
+
+      .internal-log-message {
+        text-align: center;
+        margin: 1.5rem 0;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+      }
+      .internal-log-message .line {
+        flex-grow: 1;
+        height: 1px;
+        background-color: var(--border-color);
+      }
+
+      .chat-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border-color);
+        background-color: #fff;
       }
       #form {
         display: flex;
-        padding: 20px;
       }
       #input {
-        border: 1px solid #ddd;
-        padding: 10px;
+        border: 1px solid var(--border-color);
+        padding: 0.75rem;
         flex-grow: 1;
-        border-radius: 5px;
+        border-radius: 8px;
+        font-size: 1rem;
       }
       #form button {
-        background: #007bff;
-        color: white;
+        background: var(--accent-color);
+        color: var(--accent-text);
         border: none;
-        padding: 10px 15px;
-        margin-left: 10px;
-        border-radius: 5px;
+        padding: 0.75rem 1.5rem;
+        margin-left: 0.5rem;
+        border-radius: 8px;
         cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
       }
-      #status {
-        padding: 5px 20px;
-        font-size: 0.8em;
-        color: #888;
-        background-color: #fafafa;
-        border-bottom: 1px solid #ddd;
+    </style>
+    <!-- Sidebar Tabs and Modal Styles -->
+    <style>
+      .sidebar-observability-panel {
+        border-top: 1px solid var(--border-color);
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        display: none; /* Hidden by default */
+      }
+      .sidebar-observability-panel .tab-nav {
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0 0.5rem;
+      }
+      .sidebar-observability-panel .tab-nav button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: none;
+        background: none;
+        cursor: pointer;
+        color: var(--text-secondary);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+      }
+      .sidebar-observability-panel .tab-nav button.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--tab-active-border);
+      }
+      .sidebar-observability-panel .tab-content {
+        padding: 0.5rem;
+        max-height: 40vh; /* Limit height */
+        overflow-y: auto;
+      }
+      .sidebar-observability-panel .tab-pane {
+        display: none;
+      }
+      .sidebar-observability-panel .tab-pane.active {
+        display: block;
+      }
+      #graph-output {
+        padding: 0.5rem;
+        text-align: center;
+        overflow-x: auto;
+        background-color: #fff;
+      }
+      #state-view,
+      #events-view {
+        font-family: monospace;
+        font-size: 0.8rem;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 0;
+      }
+      #state-view pre {
+        word-wrap: break-word;
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 0;
+      }
+      #state-view pre {
+        word-wrap: break-word;
+        background-color: #f1f3f5;
+        border-radius: 4px;
+        padding: 0.5rem;
+      }
+
+      /* Modal styles */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+      }
+      .modal-overlay.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal-content {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+      }
+      .modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+      }
+      .modal-close {
+        cursor: pointer;
+        font-size: 1.5rem;
+        border: none;
+        background: none;
       }
     </style>
   </head>
   <body>
-    <div id="chat-container">
-      <div id="header">
-        <h1 id="agent-name">ADK-Go Agent</h1>
+    <!-- The resizable sidebar -->
+    <aside class="sidebar">
+      <header class="sidebar-header">
+        <img
+          src="/logo.png"
+          alt="ADK Logo"
+          style="height: 24px; margin-right: 8px"
+        />
+        <h2>ADK-Go Agents</h2>
+      </header>
+      <div class="sidebar-scroll-container">
+        <nav id="agent-list" class="agent-nav"></nav>
+        <div id="sidebar-panel" class="sidebar-observability-panel">
+          <div class="tab-nav">
+            <button class="tab-btn active" data-tab="graph-view">Graph</button>
+            <button class="tab-btn" data-tab="state-view">State</button>
+            <button class="tab-btn" data-tab="events-view">Events</button>
+            <button class="tab-btn" data-tab="sessions-view">Sessions</button>
+          </div>
+          <div class="tab-content">
+            <div id="graph-view" class="tab-pane active">
+              <div id="graph-output"></div>
+            </div>
+            <div id="state-view" class="tab-pane"></div>
+            <div id="events-view" class="tab-pane"></div>
+            <div id="sessions-view" class="tab-pane">
+              <nav id="session-list" class="session-nav"></nav>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="status">Connecting...</div>
-      <ul id="messages"></ul>
-      <form id="form" action="">
-        <input
-          id="input"
-          autocomplete="off"
-          placeholder="Type your message..."
-        /><button>Send</button>
-      </form>
+      <footer class="sidebar-footer">
+        <button id="new-chat-btn">
+          <span class="material-symbols-outlined">add</span>
+          New Chat
+        </button>
+      </footer>
+    </aside>
+
+    <!-- The resizer handle that controls the sidebar width -->
+    <div class="resizer" id="resizer"></div>
+
+    <main class="chat-area">
+      <header class="chat-header">
+        <h1 id="agent-name">Select an Agent</h1>
+        <div id="agent-meta" class="agent-meta">
+          Description will appear here.
+        </div>
+        <div id="session-info">
+          Session ID: <span id="session-id">N/A</span>
+        </div>
+      </header>
+      <div id="messages" class="messages-container"></div>
+      <footer class="chat-footer">
+        <form id="form">
+          <input
+            id="input"
+            autocomplete="off"
+            placeholder="Type your message..."
+            disabled
+          /><button type="submit" disabled>Send</button>
+        </form>
+      </footer>
+    </main>
+
+    <div id="details-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-title">Details</h3>
+          <button id="modal-close-btn" class="modal-close">&times;</button>
+        </div>
+        <div id="modal-body"></div>
+      </div>
     </div>
 
+    <script
+      src="https://cdn.jsdelivr.net/npm/viz.js@2.1.2/viz.min.js"
+      integrity="sha256-hGsrA/6sneId6zYdAgU27V0fcQR0LpxglZhYWUzQ9lI="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/viz.js@2.1.2/full.render.min.js"
+      integrity="sha256-DeRit3hOnolNFxi44V/M7A5i65mxUQHgvt8M6DPtEko="
+      crossorigin="anonymous"
+    ></script>
     <script>
       const form = document.getElementById("form");
       const input = document.getElementById("input");
+      const sendButton = form.querySelector('button[type="submit"]');
       const messages = document.getElementById("messages");
-      const status = document.getElementById("status");
+      const sessionIdSpan = document.getElementById("session-id");
+      const agentList = document.getElementById("agent-list");
       const agentNameHeader = document.getElementById("agent-name");
+      const agentMeta = document.getElementById("agent-meta");
+      const newChatBtn = document.getElementById("new-chat-btn");
 
-      const ws = new WebSocket(`ws://${location.host}/ws`);
+      const detailsModal = document.getElementById("details-modal");
+      const modalTitle = document.getElementById("modal-title");
+      const modalBody = document.getElementById("modal-body");
+      const tabButtons = document.querySelectorAll("#sidebar-panel .tab-btn");
 
-      ws.onopen = () => {
-        status.textContent = "Connected";
-        status.style.color = "green";
-      };
-      ws.onclose = () => {
-        status.textContent = "Disconnected";
-        status.style.color = "red";
-      };
-      ws.onerror = (error) => {
-        console.error("WebSocket Error:", error);
-        status.textContent = "Connection Error";
-      };
+      let ws;
+      // Used to append streaming responses to the correct message bubble.
+      let currentStreamingMessage = null;
+      // Used to store the full event history for state reconstruction.
+      let eventHistory = [];
 
-      ws.onmessage = (event) => {
-        const data = event.data;
-        if (data.startsWith("system:agent_name:")) {
-          const agentName = data.substring("system:agent_name:".length);
-          agentNameHeader.textContent = `Agent: ${agentName}`;
-          document.title = `${agentName} - ADK-Go`;
-        } else {
-          addMessage(data, "agent-message");
-        }
-      };
+      function updateURL(agentName, sessionId) {
+        const url = new URL(window.location);
+        url.searchParams.set("agent", agentName);
+        url.searchParams.set("sessionId", sessionId);
+        window.history.pushState({}, "", url);
+      }
 
       form.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (input.value) {
-          addMessage(input.value, "user-message");
+        if (ws && ws.readyState === WebSocket.OPEN && input.value) {
+          if (currentStreamingMessage) {
+            currentStreamingMessage.remove();
+            currentStreamingMessage = null;
+          }
           ws.send(input.value);
           input.value = "";
         }
       });
 
-      function addMessage(text, className) {
-        const item = document.createElement("li");
-        item.className = className;
-        item.textContent = text;
-        messages.appendChild(item);
-        messages.scrollTop = messages.scrollHeight;
+      newChatBtn.onclick = () => {
+        const activeAgentLink = document.querySelector(".agent-nav a.active");
+        if (activeAgentLink) {
+          connectAgent(activeAgentLink.dataset.agentName, null);
+        }
+      };
+
+      // Close modal logic
+      detailsModal.onclick = (e) => {
+        if (e.target === detailsModal || e.target.id === "modal-close-btn") {
+          detailsModal.classList.remove("visible");
+        }
+      };
+
+      tabButtons.forEach((button) => {
+        button.onclick = () => {
+          tabButtons.forEach((btn) => btn.classList.remove("active"));
+          button.classList.add("active");
+          document
+            .querySelectorAll("#sidebar-panel .tab-pane")
+            .forEach((pane) => {
+              pane.classList.remove("active");
+            });
+          document.getElementById(button.dataset.tab).classList.add("active");
+        };
+      });
+
+      function connectAgent(agentName, sessionId) {
+        if (ws) {
+          ws.close();
+        }
+        eventHistory = []; // Reset history for new agent/session
+        // Reset session list display. It will be shown again if sessions are fetched.
+        const sidebarPanel = document.getElementById("sidebar-panel");
+        sidebarPanel.style.display = "none";
+
+        messages.innerHTML = ""; // Clear previous chat
+        agentNameHeader.textContent = "Connecting...";
+        sessionIdSpan.textContent = "N/A";
+        agentMeta.textContent = "Please wait...";
+        input.disabled = true;
+        sendButton.disabled = true;
+
+        if (!agentName) {
+          agentNameHeader.textContent = "Select an Agent to Begin";
+          return;
+        }
+
+        let wsURL = `ws://${location.host}/ws?agent=${agentName}`;
+        if (sessionId) {
+          wsURL += `&sessionId=${sessionId}`;
+        }
+        ws = new WebSocket(wsURL);
+
+        ws.onopen = () => {
+          input.disabled = false;
+          sendButton.disabled = false;
+          sidebarPanel.style.display = "block";
+          input.focus();
+        };
+        ws.onclose = () => {
+          agentNameHeader.textContent = "Connection Closed";
+          input.disabled = true;
+          sendButton.disabled = true;
+        };
+        ws.onerror = (error) => {
+          console.error("WebSocket Error:", error);
+          agentNameHeader.textContent = "Connection Error";
+        };
+
+        ws.onmessage = (event) => {
+          const msg = JSON.parse(event.data);
+          switch (msg.type) {
+            case "system_info":
+              agentNameHeader.textContent = msg.payload.agentName;
+              agentMeta.textContent = `${msg.payload.agentType}: ${
+                msg.payload.agentDescription || "No description."
+              }`;
+              sessionIdSpan.textContent = msg.payload.sessionId;
+              document.title = `${msg.payload.agentName} - ADK-Go`;
+              updateURL(msg.payload.agentName, msg.payload.sessionId);
+              fetchAndRenderState(msg.payload.sessionId);
+              fetchSessions(msg.payload.agentName, msg.payload.sessionId);
+              fetchAndRenderGraph(msg.payload.agentName);
+              // Reset views for new session
+              renderInteractiveEventsView([]);
+              renderStateView({});
+              break;
+            case "history":
+              eventHistory = msg.payload || [];
+              renderInteractiveEventsView(eventHistory);
+              // Clear and render messages
+              messages.innerHTML = "";
+              eventHistory.forEach((event, index) =>
+                renderMessage(event, false, index)
+              );
+              break;
+            case "user_message":
+            case "agent_response":
+              if (currentStreamingMessage) {
+                // The stream has finished, this is the final event for it.
+                // Remove the temporary streaming message.
+                currentStreamingMessage.remove();
+              }
+              eventHistory.push(msg.payload);
+              renderMessage(msg.payload, false, eventHistory.length - 1);
+              renderInteractiveEventsView(eventHistory);
+              currentStreamingMessage = null; // Reset for next stream
+              break;
+            case "stream_agent_response_part":
+              handleStreamPart(msg.payload);
+              break;
+            case "internal_log":
+              renderInternalLog(msg.payload);
+              break;
+            case "state_update":
+              renderStateView(msg.payload);
+              break;
+          }
+          messages.scrollTop = messages.scrollHeight;
+        };
       }
+
+      function handleStreamPart(payload) {
+        if (!currentStreamingMessage) {
+          // This is the first chunk, create a new message bubble
+          const agentMsg = {
+            role: "model",
+            parts: [{ text: "" }],
+            author: "Agent",
+          };
+          currentStreamingMessage = renderMessage(agentMsg, true, -1);
+        }
+        // Append text to the content part of the streaming message
+        const contentDiv =
+          currentStreamingMessage.querySelector(".message-content");
+        if (contentDiv) {
+          contentDiv.textContent += payload.text;
+        }
+      }
+
+      function reconstructState(upToIndex) {
+        let state = {};
+        if (!eventHistory || eventHistory.length === 0) {
+          return state;
+        }
+        for (let i = 0; i <= upToIndex; i++) {
+          const event = eventHistory[i];
+          // Assuming Go event has a similar structure to Python's, with PascalCase
+          // for JSON fields from Go structs.
+          if (event.Actions && event.Actions.StateDelta) {
+            Object.assign(state, event.Actions.StateDelta);
+          }
+        }
+        return state;
+      }
+
+      function renderMessage(msg, isStreaming = false, eventIndex = -1) {
+        // If this is a final message for a stream, remove the placeholder
+        if (!isStreaming && currentStreamingMessage) {
+          currentStreamingMessage.remove();
+          currentStreamingMessage = null;
+        }
+
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message";
+
+        let iconName, senderName;
+        if (msg.author === "user" || msg.role === "user") {
+          msgDiv.classList.add("user-message");
+          iconName = "person";
+          senderName = "User";
+        } else if (msg.author === "tool" || msg.role === "function") {
+          msgDiv.classList.add("agent-message");
+          iconName = "build";
+          senderName = "Tool Response";
+        } else {
+          msgDiv.classList.add("agent-message");
+          iconName = "smart_toy";
+          senderName = "Agent";
+        }
+
+        msgDiv.innerHTML = `
+          <div class="message-avatar">
+            <span class="material-symbols-outlined">${iconName}</span>
+          </div>
+          <div class="message-body">
+            <div class="message-sender">${senderName}</div>
+          </div>
+        `;
+
+        if (eventIndex !== -1) {
+          msgDiv.style.cursor = "pointer";
+          msgDiv.title = "Click to view state at this event";
+          msgDiv.onclick = () => {
+            // Switch to state tab
+            const stateTabButton = document.querySelector(
+              '.tab-btn[data-tab="state-view"]'
+            );
+            if (stateTabButton) stateTabButton.click();
+
+            // Reconstruct and render state
+            const stateAtEvent = reconstructState(eventIndex);
+            renderStateView(stateAtEvent);
+          };
+        }
+
+        const messageBody = msgDiv.querySelector(".message-body");
+
+        // A message can have multiple parts (text, function calls, etc.)
+        (msg.parts || []).forEach((part) => {
+          if (part.text) {
+            const contentDiv = document.createElement("div");
+            contentDiv.className = "message-content";
+            if (msg.role === "user") {
+              contentDiv.classList.add("user-message");
+            } else {
+              contentDiv.classList.add("agent-message");
+            }
+            contentDiv.textContent = part.text;
+            messageBody.appendChild(contentDiv);
+          }
+
+          if (part.function_call) {
+            const toolDiv = document.createElement("div");
+            toolDiv.className = "tool-call";
+            const args = JSON.stringify(part.function_call.args, null, 2);
+            toolDiv.innerHTML = `
+              <div class="tool-header">
+                <span class="material-symbols-outlined">build</span>
+                Tool Call: ${part.function_call.name}
+              </div>
+              <div class="tool-body"><pre>${args}</pre></div>`;
+            messageBody.appendChild(toolDiv);
+          }
+
+          if (part.function_response) {
+            const toolDiv = document.createElement("div");
+            toolDiv.className = "tool-response";
+            const response = JSON.stringify(
+              part.function_response.response,
+              null,
+              2
+            );
+            toolDiv.innerHTML = `
+              <div class="tool-header">
+                 <span class="material-symbols-outlined">check_circle</span>
+                 Tool Response: ${part.function_response.name}
+              </div>
+              <div class="tool-body"><pre>${response}</pre></div>`;
+            messageBody.appendChild(toolDiv);
+          }
+        });
+
+        messages.appendChild(msgDiv);
+        return msgDiv; // Return the element for streaming
+      }
+
+      function renderInternalLog(payload) {
+        const logDiv = document.createElement("div");
+        logDiv.className = "internal-log-message";
+        logDiv.innerHTML = `
+          <div class="line"></div>
+          <span>${payload.text}</span>
+          <div class="line"></div>
+        `;
+        messages.appendChild(logDiv);
+      }
+
+      function renderStateView(state) {
+        const stateView = document.getElementById("state-view");
+        stateView.innerHTML = `<pre>${JSON.stringify(state, null, 2)}</pre>`;
+      }
+
+      function renderInteractiveEventsView(history) {
+        const eventsView = document.getElementById("events-view");
+        eventsView.innerHTML = ""; // Clear previous content
+        eventsView.style.fontFamily = "monospace";
+        eventsView.style.fontSize = "0.8rem";
+
+        (history || []).forEach((event, index) => {
+          const details = document.createElement("details");
+          details.style.border = "1px solid #ccc";
+          details.style.borderRadius = "4px";
+          details.style.padding = "5px";
+          details.style.marginBottom = "5px";
+
+          const summary = document.createElement("summary");
+          summary.style.cursor = "pointer";
+          summary.style.fontWeight = "bold";
+          summary.textContent = `Event ${index}: ${
+            event.author || event.role || "system"
+          }`;
+          if (event.Actions && event.Actions.StateDelta) {
+            summary.textContent += " (State Changed)";
+            summary.style.color = "var(--accent-color)";
+          }
+
+          const pre = document.createElement("pre");
+          pre.style.backgroundColor = "#f1f3f5";
+          pre.style.padding = "10px";
+          pre.style.borderRadius = "4px";
+          pre.style.marginTop = "5px";
+          pre.textContent = JSON.stringify(event, null, 2);
+
+          details.appendChild(summary);
+          details.appendChild(pre);
+          eventsView.appendChild(details);
+        });
+      }
+
+      function fetchAndRenderState(sessionId) {
+        const stateView = document.getElementById("state-view");
+        if (!sessionId) {
+          stateView.textContent = "No active session.";
+          return;
+        }
+        fetch(`/api/session/${sessionId}/state`)
+          .then((res) => {
+            if (!res.ok)
+              throw new Error(`Failed to fetch state: ${res.status}`);
+            return res.json();
+          })
+          .then((state) => {
+            renderStateView(state);
+          })
+          .catch((err) => {
+            stateView.textContent = `Error loading state: ${err.message}`;
+            console.error(err);
+          });
+      }
+
+      function fetchAndRenderGraph(agentName) {
+        const graphOutput = document.getElementById("graph-output");
+        if (!graphOutput) return;
+        graphOutput.innerHTML = "Loading graph...";
+
+        fetch(`/api/graph?agent=${agentName}`)
+          .then((response) => response.text())
+          .then((dot) => {
+            const viz = new Viz();
+            viz
+              .renderSVGElement(dot)
+              .then((element) => {
+                graphOutput.innerHTML = "";
+                graphOutput.appendChild(element);
+              })
+              .catch((error) => {
+                graphOutput.textContent = "Error rendering graph.";
+                console.error(error);
+              });
+          })
+          .catch((err) => {
+            graphOutput.textContent = "Failed to fetch graph.";
+            console.error("Failed to fetch graph:", err);
+          });
+      }
+
+      function fetchSessions(agentName, activeSessionId) {
+        fetch(`/api/sessions?agent=${agentName}`)
+          .then((response) => response.json())
+          .then((sessions) => {
+            renderSessionList(agentName, sessions || [], activeSessionId);
+          })
+          .catch((err) => {
+            console.error("Failed to fetch sessions:", err);
+          });
+      }
+
+      function renderSessionList(agentName, sessionIds, activeSessionId) {
+        const sessionList = document.getElementById("session-list");
+        if (!sessionList) return;
+
+        sessionList.innerHTML = "";
+        if (sessionIds.length === 0) {
+          const item = document.createElement("span");
+          item.textContent = "No past sessions.";
+          item.style.padding = "0.75rem 1rem";
+          item.style.fontSize = "0.85rem";
+          item.style.color = "var(--text-secondary)";
+          item.style.display = "block";
+          sessionList.appendChild(item);
+          return;
+        }
+
+        sessionIds.reverse().forEach((id) => {
+          const link = document.createElement("a");
+          link.textContent = id.substring(0, 8) + "..."; // Shorten for display
+          link.title = id;
+          if (id === activeSessionId) {
+            link.classList.add("active");
+          }
+          link.onclick = () => {
+            connectAgent(agentName, id);
+          };
+          sessionList.appendChild(link);
+        });
+      }
+
+      // --- Interactive Graph Logic ---
+      document.getElementById("graph-output").addEventListener("click", (e) => {
+        const targetNode = e.target.closest(".node");
+        if (!targetNode) return;
+
+        const textElement = targetNode.querySelector("text");
+        if (!textElement) return;
+
+        const label = textElement.textContent;
+        const lines = label.split("\n");
+        const name = lines[0].trim();
+        const typeHint = lines.length > 1 ? lines[1].trim() : "";
+
+        let type = "agent";
+        if (typeHint.includes("(Tool)")) {
+          type = "tool";
+        }
+        showDetails(type, name);
+      });
+
+      function showDetails(type, name) {
+        const activeAgentLink = document.querySelector(".agent-nav a.active");
+        if (!activeAgentLink) return;
+        const agentName = activeAgentLink.dataset.agentName;
+
+        let url = `/api/details?agent=${agentName}`;
+        if (type === "tool") {
+          url += `&tool=${name}`;
+        }
+
+        fetch(url)
+          .then((res) => res.json())
+          .then((data) => {
+            modalTitle.textContent = `${data.Type}: ${data.Name}`;
+            modalBody.innerHTML = `<p>${
+              data.Description || "No description available."
+            }</p>`;
+            detailsModal.classList.add("visible");
+          })
+          .catch((err) => {
+            console.error(
+              `Failed to fetch details for ${type} '${name}':`,
+              err
+            );
+          });
+      }
+
+      // Fetch agents on load
+      fetch("/api/agents")
+        .then((response) => response.json())
+
+        .then((agentNames) => {
+          agentList.innerHTML = "";
+          const urlParams = new URLSearchParams(window.location.search);
+          const currentAgent = urlParams.get("agent");
+          const currentSessionId = urlParams.get("sessionId");
+
+          agentNames.forEach((name) => {
+            const link = document.createElement("a");
+            link.textContent = name;
+            link.dataset.agentName = name;
+            if (name === currentAgent) {
+              link.classList.add("active");
+            }
+            link.onclick = () => {
+              document
+                .querySelectorAll(".agent-nav a")
+                .forEach((l) => l.classList.remove("active"));
+              link.classList.add("active");
+              // Start a new session for this agent
+              connectAgent(name, null);
+            };
+            agentList.appendChild(link);
+          });
+
+          if (currentAgent) {
+            connectAgent(currentAgent, currentSessionId);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch agent list:", err);
+
+          agentNameHeader.textContent = "Error loading agents";
+        });
+
+      // --- Sidebar Resizing Logic ---
+      const sidebar = document.querySelector(".sidebar");
+      const resizer = document.getElementById("resizer");
+
+      const mousedownHandler = function (e) {
+        // We don't want text selection during drag
+        e.preventDefault();
+
+        // Get the current mouse position and sidebar width
+        const x = e.clientX;
+        const sidebarWidth = sidebar.getBoundingClientRect().width;
+
+        const mousemoveHandler = (e) => {
+          const dx = e.clientX - x;
+          const newWidth = sidebarWidth + dx;
+          // Enforce min/max width constraints
+          if (newWidth > 240 && newWidth < 600) {
+            sidebar.style.width = `${newWidth}px`;
+          }
+        };
+
+        const mouseupHandler = () => {
+          // Clean up listeners
+          document.removeEventListener("mousemove", mousemoveHandler);
+          document.removeEventListener("mouseup", mouseupHandler);
+        };
+
+        document.addEventListener("mousemove", mousemoveHandler);
+        document.addEventListener("mouseup", mouseupHandler);
+      };
+
+      resizer.addEventListener("mousedown", mousedownHandler);
     </script>
   </body>
 </html>

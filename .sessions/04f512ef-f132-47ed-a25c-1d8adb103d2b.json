@@ -1,0 +1,69 @@
+{
+  "ID": "04f512ef-f132-47ed-a25c-1d8adb103d2b",
+  "History": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello! How can I help you today?\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Could you save the file?"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "What is the filename and the content you would like to save?\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "a.txt?"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "What should I write into `a.txt`?\n"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "?? because you are file based chat agent?"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "I understand.  I'm a file-based chat agent, but I don't automatically have content to write to files.  I need you to provide me with the text you'd like saved in `a.txt`.  What would you like me to write?\n"
+        }
+      ]
+    }
+  ]
+}

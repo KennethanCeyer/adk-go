@@ -1,25 +1,24 @@
 # ADK-Go: Agent Development Kit in Go (Migration In Progress)
 
 <html>
-    <h2 align="center">
-      <img src="https://raw.githubusercontent.com/google/adk-python/main/assets/agent-development-kit.png" width="256"/>
-    </h2>
-    <h3 align="center">
-      An open-source, code-first Go toolkit for building, evaluating, and deploying sophisticated AI agents with flexibility and control.
-    </h3>
-    <h3 align="center">
-      Important Links:
-      <a href="https://google.github.io/adk-docs/">Docs</a>
-    </h3>
+  <h2 align="center">
+    <img src="https://raw.githubusercontent.com/google/adk-python/main/assets/agent-development-kit.png" width="256"/>
+  </h2>
+  <h3 align="center">
+    An open-source, code-first Go toolkit for building, evaluating, and deploying sophisticated AI agents with flexibility and control.
+  </h3>
+  <h3 align="center">
+    Important Links:
+    <a href="https://google.github.io/adk-docs/">Docs</a>
+  </h3>
 </html>
 
 Welcome to ADK-Go
+This repository is a Go implementation of the Agent Development Kit (ADK), designed for building, evaluating, and deploying sophisticated AI agents. It provides a code-first, modular framework for creating complex multi-agent systems with deterministic control flows.
 
-This repository is currently undergoing a migration from its original Python-based Agent Development Kit (ADK) to Go. The primary goal is to create a robust, performant, and idiomatic Go version of the ADK.
+This project is an ongoing effort to create a robust, performant, and idiomatic Go version of the original Python ADK. While many features are still being ported, the core functionality for building and running agents is in place.
 
-Please Note: This is an active development project. Many features from the Python ADK are not yet implemented or are in the process of being ported. The initial focus is on establishing a core, runnable agent interaction loop.
-
-This README provides instructions to set up and run a **foundational "Hello World" agent example**. This example demonstrates the basic structure, core ADK concepts in Go, and interaction with Google's Gemini LLM.
+This README provides instructions to set up the project, run the included examples, and understand the core concepts of building with ADK-Go.
 
 ## Project Structure
 
@@ -29,18 +28,18 @@ The project is structured to separate concerns, making it modular and scalable.
 adk-go/
 ├── adk/
 │   └── runner.go            # SimpleCLIRunner for command-line interaction
-├── agents/                  # Core agent definitions and interfaces
-│   ├── base_llm_agent.go
-│   ├── parallel_agent.go
-│   ├── sequential_agent.go
+├── agents/                  # Core agent definitions and workflow agents
 │   ├── interfaces/
 │   │   └── interfaces.go
 │   └── invocation/
 │       └── context.go
+├── common/
+│   └── utils.go             # Common utility functions
 ├── cmd/
 │   └── adk/
 │       └── main.go          # Main CLI entrypoint for running agents
 ├── examples/                # Example agent implementations
+│   ├── file_based_chat/
 │   ├── helloworld/
 │   ├── parallel_trip_planner/
 │   ├── sequential_weather/
@@ -51,17 +50,19 @@ adk-go/
 ├── models/
 │   └── types/
 │       └── types.go        # Core data structures (Message, Part, etc.)
+├── sessions/                # Session management for conversations
+│   ├── session.go
+│   └── store.go
 ├── tools/
 │   ├── interface.go
 │   ├── rolldie.go
 │   └── example/
-│       ├── flight_tool.go, hotel_tool.go, weather_tool.go
+│       └── ... (flight_tool.go, hotel_tool.go, etc.)
 ├── web/                     # Web server and UI for agent interaction
 │   ├── handler.go
 │   ├── server.go
-│   └── static/index.html
+│   └── index.html
 ├── go.mod                  # Manages project dependencies
-├── go.sum                  # Checksums for dependencies
 └── README.md
 ```
 
@@ -95,7 +96,11 @@ go mod tidy
 
 4.  **Run Examples**
 
+    ![Web Demo Screenshot](./docs/web_example.png)
+
     The main entrypoint is `cmd/adk/main.go`, which provides a command-line interface (CLI) to run agents.
+
+    All examples use a simple in-memory session store. When you run an agent, a new session ID is created. You can resume a previous conversation by providing this ID.
 
     #### a. Single Agent Example (`helloworld`)
 
@@ -103,13 +108,15 @@ go mod tidy
 
     ```bash
     go run ./cmd/adk run -agent helloworld
+    # To resume a session:
+    # go run ./cmd/adk run -agent helloworld -session-id <your-session-id>
     ```
 
     Once started, try asking it: `Can you roll a 20-sided die?`
 
     #### b. Sequential Agent Example (`sequential_weather`)
 
-    This example demonstrates the `SequentialAgent`, which executes a series of sub-agents in order. The workflow first greets the user, then provides a simulated weather report.
+    This example demonstrates a single, capable agent that can either make small talk or use a tool to get a weather report based on the user's intent.
 
     ```bash
     go run ./cmd/adk run -agent sequential_weather
@@ -127,14 +134,35 @@ go mod tidy
 
     Try a prompt like: `I want to book a trip to Tokyo on 2024-12-25.`
 
-5.  **Run the Web Interface (State Viewer)**
+    #### d. Loop Agent Example (`looping_guesser`)
 
-    ADK-Go includes a web server that provides a UI for interacting with agents and viewing the state of the conversation in real-time.
+    This example demonstrates the `LoopAgent`, which repeatedly executes a sub-agent. In this case, it plays a number guessing game, making iterative guesses until it finds the correct number or runs out of attempts.
 
-    To start the web server with the `parallel_trip_planner` agent, run:
+    ```bash
+    go run ./cmd/adk run -agent looping_guesser
+    ```
+
+    Start the game with a prompt like: `guess the number`
+
+    #### e. File-Based Chat Agent (`file_based_chat`)
+
+    This example demonstrates an agent that can interact with the local filesystem. It can read from and write to files.
+
+    ```bash
+    go run ./cmd/adk/main.go run -agent file_based_chat
+    ```
+
+    Try prompts like: `write "hello world" to a file named hello.txt` and then `can you read the file hello.txt?`
+
+## Running the Web Interface
+
+ADK-Go includes a simple, real-time web interface for interacting with your agents. This provides a more user-friendly experience than the command-line runner.
+
+To start the web server, use the `web` command. It hosts a general UI where you can select any registered agent.
 
 ```bash
-go run ./cmd/adk web -agent parallel_trip_planner
+# Start the web UI
+go run ./cmd/adk web
 ```
 
     Then, open your web browser and navigate to `http://localhost:8080`. You will see a chat interface, titled with the agent's name, where you can interact with it. Each message (user, agent, error) is displayed, providing a clear view of the conversation state.
