@@ -8,6 +8,7 @@ import (
 	"github.com/KennethanCeyer/adk-go/agents/invocation"
 	"github.com/KennethanCeyer/adk-go/events"
 	"github.com/KennethanCeyer/adk-go/models"
+	"github.com/KennethanCeyer/adk-go/models/types"
 )
 
 // IdentityLlmRequestProcessor gives the agent identity from the framework.
@@ -47,7 +48,7 @@ func (p *IdentityLlmRequestProcessor) RunAsync(invocationCtx *invocation.Invocat
 			currentSysInstructionText += "\n\n"
 		}
 		newInstructionText := currentSysInstructionText + addedInstruction
-		llmReq.Config.SystemInstruction.Parts = []models.Part{{Text: &newInstructionText}}
+		llmReq.Config.SystemInstruction.Parts = []types.Part{{Text: &newInstructionText}}
 	}()
 	return outCh, nil
 }

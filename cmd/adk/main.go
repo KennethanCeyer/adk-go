@@ -7,12 +7,16 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/KennethanCeyer/adk-go/adk"
-	"github.com/KennethanCeyer/adk-go/agents"
-	"github.com/KennethanCeyer/adk-go/examples/helloworld"
-	"github.com/KennethanCeyer/adk-go/examples/sequential_weather"
+	"github.com/KennethanCeyer/adk-go/examples"
+
+	// Import example packages to trigger their init() functions for agent registration.
+	// The blank identifier `_` is used because we only need the side effects of the import.
+	_ "github.com/KennethanCeyer/adk-go/examples/helloworld"
+	_ "github.com/KennethanCeyer/adk-go/examples/sequentialweather"
 )
 
 func main() {
@@ -22,6 +26,13 @@ func main() {
 	}
 
 	command := os.Args[1]
+	// User-friendly check: if the first argument is a flag, they probably forgot the 'run' command.
+	if strings.HasPrefix(command, "-") {
+		fmt.Printf("Error: Missing command. Did you mean 'adk run %s'?\n\n", strings.Join(os.Args[1:], " "))
+		printUsage()
+		os.Exit(1)
+	}
+
 	switch command {
 	case "run":
 		runCmd(os.Args[2:])
@@ -44,30 +55,32 @@ func printUsage() {
 	fmt.Println("  run                Run an agent")
 	// fmt.Println("  web                Start the ADK web UI")
 	// fmt.Println("  eval               Run evaluations for an agent")
-	fmt.Println("\nFlags for run command:")
-	fmt.Println("  -agent <name>      Name of the agent to run (helloworld or sequential_weather)")
+	fmt.Println("\nFlags for 'run' command:")
+	fmt.Printf("  -agent <name>      Name of the agent to run. Available: [%s]\n", strings.Join(examples.ListAgents(), ", "))
 }
 
 func runCmd(args []string) {
 	runFlagSet := flag.NewFlagSet("run", flag.ExitOnError)
-	agentName := runFlagSet.String("agent", "helloworld", "Name of the agent to run (helloworld or sequential_weather)")
+	availableAgents := examples.ListAgents()
+	defaultAgent := "helloworld"
+	if len(availableAgents) == 0 {
+		log.Fatal("No agents are registered. Please check the 'examples' packages.")
+	}
+	if !contains(availableAgents, defaultAgent) {
+		defaultAgent = availableAgents[0]
+	}
+
+	agentName := runFlagSet.String("agent", defaultAgent, fmt.Sprintf("Name of the agent to run. Available: [%s]", strings.Join(availableAgents, ", ")))
 
 	err := runFlagSet.Parse(args)
 	if err != nil {
 		log.Fatalf("Error parsing flags for run command: %v", err)
 	}
 
-	var agentToRun agents.LlmAgent
-
-	switch *agentName {
-	case "helloworld":
-		log.Println("Loading 'helloworld' agent...")
-		agentToRun = helloworld.ConcreteLlmAgent
-	case "sequential_weather":
-		log.Println("Loading 'sequential_weather' agent...")
-		agentToRun = sequential_weather.SequentialWeatherAgent
-	default:
-		log.Printf("Error: Unknown agent name '%s'", *agentName)
+	log.Printf("Loading '%s' agent...", *agentName)
+	agentToRun, found := examples.GetAgent(*agentName)
+	if !found {
+		log.Printf("Error: Unknown agent name '%s'.", *agentName)
 		printUsage()
 		os.Exit(1)
 	}
@@ -87,4 +100,13 @@ func runCmd(args []string) {
 	log.Printf("Starting agent runner...")
 	runner.Start(ctx)
 	log.Println("Agent runner finished.")
+}
+
+func contains(slice []string, item string) bool {
+	for _, a := range slice {
+		if a == item {
+			return true
+		}
+	}
+	return false
 }

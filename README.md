@@ -48,7 +48,7 @@ adk-go/
 ├── examples/
 │   ├── helloworld/
 │   │   └── agent.go        # Single agent example
-│   └── sequential_weather/
+│   └── sequentialweather/
 │       └── agent.go        # Multi-agent workflow example
 ├── go.mod                  # Manages project dependencies
 ├── go.sum                  # Checksums for dependencies
@@ -91,26 +91,22 @@ As the migration progresses, other directories and files from your provided list
 
 4. **Run the HelloWorld Agent**
 
-   From the `adk-go` root directory
+   The main entrypoint for the application is `cmd/adk/main.go`, which acts as a command-line interface (CLI) dispatcher. To run an agent, you use the `run` subcommand followed by the agent's name specified with the `-agent` flag.
 
-   ```bash
-   go run ./cmd/helloworld_runner/main.go
-   ```
-
-5. **Interact with the Agent**
-
-   Once the runner starts, it will prompt you for input. Try the following.
+   From the `adk-go` root directory, run the `helloworld` agent:
 
    ```bash
    go run ./cmd/adk run -agent helloworld
    ```
 
-   You will see output similar to this:
+5. **Interact with the Agent**
+
+   Once the runner starts, it will prompt you for input. You will see output similar to this:
 
    ```
    --- Starting Agent: HelloWorldAgent ---
    Description: A simple agent that can roll a die using a tool.
-   Model: gemini-1.5-flash-latest
+   Model: gemini-1.5-pro-latest
    Available Tools:
      - roll_die: Rolls a die with a specified number of sides and returns the result.
    ------------------------------------
@@ -123,10 +119,10 @@ As the migration progresses, other directories and files from your provided list
 
 6. **Run the Multi-Agent Example**
 
-   To see the `SequentialAgent` in action, run the `sequential_weather` agent. This workflow will first greet you, then provide a simulated weather report.
+   To see the `SequentialAgent` in action, run the `sequentialWeather` agent. This workflow will first greet you, then provide a simulated weather report.
 
    ```bash
-   go run ./cmd/adk run -agent sequential_weather
+   go run ./cmd/adk run -agent sequentialWeather
    ```
 
    Interact with it by simply pressing Enter or typing any message to trigger the sequence.

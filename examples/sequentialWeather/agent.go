@@ -1,15 +1,16 @@
-package sequential_weather
+package sequentialweather
 
 import (
 	"log"
 
 	"github.com/KennethanCeyer/adk-go/agents"
+	"github.com/KennethanCeyer/adk-go/agents/interfaces"
+	"github.com/KennethanCeyer/adk-go/examples"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
 	"github.com/KennethanCeyer/adk-go/tools"
+	"github.com/KennethanCeyer/adk-go/tools/example"
 )
-
-var SequentialWeatherAgent agents.LlmAgent
 
 func init() {
 	geminiProvider, err := llmproviders.NewGeminiLLMProvider()
@@ -17,43 +18,38 @@ func init() {
 		log.Fatalf("Failed to create GeminiLLMProvider: %v. Ensure GEMINI_API_KEY is set.", err)
 	}
 
-	// --- Define Specialist Sub-Agents ---
-
 	// 1. Greeting Agent
 	greetingInstruction := &modelstypes.Message{
 		Parts: []modelstypes.Part{{Text: new(string)}},
 	}
-	*greetingInstruction.Parts[0].Text = "You are a friendly greeter. Just say hello and ask how you can help with the weather."
+	*greetingInstruction.Parts[0].Text = "You are a friendly greeter. Your job is to greet the user and then clearly repeat their weather-related query to pass to the next step. For example, if the user says 'weather in london', you should respond with something like 'Hello! You want to know the weather for: london'."
 	greetingAgent := agents.NewBaseLlmAgent(
 		"GreeterAgent",
 		"A sub-agent that handles greetings.",
-		"gemini-2.5-pro",
+		"gemini-1.5-pro-latest",
 		greetingInstruction,
 		geminiProvider,
 		nil, // No tools for the greeter
 	)
 
-	// 2. Weather Agent
 	weatherInstruction := &modelstypes.Message{
 		Parts: []modelstypes.Part{{Text: new(string)}},
 	}
-	// Using RollDie as a stand-in for a real weather tool for this example.
-	*weatherInstruction.Parts[0].Text = "You are a weather bot. The user has already been greeted. Use the roll_die tool to simulate getting weather for 'New York'."
+	*weatherInstruction.Parts[0].Text = "You are a weather bot. You will receive input that contains a weather query, possibly prefixed by a greeting. Your task is to extract the city name from the query and use the `get_weather` tool to find the weather."
 	weatherAgent := agents.NewBaseLlmAgent(
 		"WeatherAgent",
 		"A sub-agent that provides weather information.",
-		"gemini-2.5-pro",
+		"gemini-1.5-pro-latest",
 		weatherInstruction,
 		geminiProvider,
-		[]tools.Tool{tools.NewRollDieTool()},
+		[]tools.Tool{example.NewWeatherTool()},
 	)
 
-	// --- Define the Sequential Workflow Agent ---
-	SequentialWeatherAgent = agents.NewSequentialAgent(
+	sequentialAgent := agents.NewSequentialAgent(
 		"SequentialWeatherWorkflow",
 		"A workflow that first greets the user, then provides the weather.",
-		[]agents.LlmAgent{greetingAgent, weatherAgent},
+		[]interfaces.LlmAgent{greetingAgent, weatherAgent},
 	)
 
-	log.Println("SequentialWeatherAgent initialized in examples/sequential_weather/agent.go.")
+	examples.RegisterAgent("sequentialWeather", sequentialAgent)
 }

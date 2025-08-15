@@ -4,12 +4,11 @@ import (
 	"log"
 
 	"github.com/KennethanCeyer/adk-go/agents"
+	"github.com/KennethanCeyer/adk-go/examples"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
 	"github.com/KennethanCeyer/adk-go/tools"
 )
-
-var ConcreteLlmAgent agents.LlmAgent
 
 func init() {
 	geminiProvider, err := llmproviders.NewGeminiLLMProvider()
@@ -25,13 +24,13 @@ func init() {
 		Parts: []modelstypes.Part{{Text: &systemInstructionText}},
 	}
 
-	ConcreteLlmAgent = agents.NewBaseLlmAgent(
+	agent := agents.NewBaseLlmAgent(
 		"HelloWorldAgent",
 		"A simple agent that can roll a die using a tool.",
-		"gemini-2.5-pro",
+		"gemini-1.5-pro-latest",
 		systemInstruction,
 		geminiProvider,
 		agentTools,
 	)
-	log.Println("HelloWorldAgent initialized in examples/helloworld/agent.go.")
+	examples.RegisterAgent("helloworld", agent)
 }

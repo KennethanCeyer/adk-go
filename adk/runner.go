@@ -8,15 +8,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/KennethanCeyer/adk-go/agents"
+	"github.com/KennethanCeyer/adk-go/agents/interfaces"
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
 )
 
 type SimpleCLIRunner struct {
-	AgentToRun agents.LlmAgent
+	AgentToRun interfaces.LlmAgent
 }
 
-func NewSimpleCLIRunner(agent agents.LlmAgent) (*SimpleCLIRunner, error) {
+func NewSimpleCLIRunner(agent interfaces.LlmAgent) (*SimpleCLIRunner, error) {
 	if agent == nil {
 		return nil, fmt.Errorf("agent cannot be nil")
 	}
@@ -24,19 +24,7 @@ func NewSimpleCLIRunner(agent agents.LlmAgent) (*SimpleCLIRunner, error) {
 }
 
 func (r *SimpleCLIRunner) Start(ctx context.Context) {
-	fmt.Printf("--- Starting Agent: %s ---\n", r.AgentToRun.GetName())
-	if r.AgentToRun.GetDescription() != "" {
-		fmt.Printf("Description: %s\n", r.AgentToRun.GetDescription())
-	}
-	fmt.Printf("Model: %s\n", r.AgentToRun.GetModelIdentifier())
-	if len(r.AgentToRun.GetTools()) > 0 {
-		fmt.Println("Available Tools:")
-		for _, tool := range r.AgentToRun.GetTools() {
-			fmt.Printf("  - %s: %s\n", tool.Name(), tool.Description())
-		}
-	}
-	fmt.Println("------------------------------------")
-	fmt.Println("Type 'exit' or 'quit' to stop.")
+	r.printAgentInfo()
 
 	var history []modelstypes.Message
 	scanner := bufio.NewScanner(os.Stdin)
@@ -81,7 +69,7 @@ func (r *SimpleCLIRunner) Start(ctx context.Context) {
 				log.Printf("Agent Process call failed due to context cancellation: %v", err)
 				return
 			}
-			fmt.Printf("[%s-error]: I encountered an issue: %v\n", r.AgentToRun.Name(), err)
+			fmt.Printf("[%s-error]: I encountered an issue: %v\n", r.AgentToRun.GetName(), err)
 			history = append(history, userMessage)
 			continue
 		}
@@ -111,4 +99,20 @@ func (r *SimpleCLIRunner) Start(ctx context.Context) {
 			history = history[len(history)-(maxHistoryTurns*2):]
 		}
 	}
+}
+
+func (r *SimpleCLIRunner) printAgentInfo() {
+	fmt.Printf("--- Starting Agent: %s ---\n", r.AgentToRun.GetName())
+	if desc := r.AgentToRun.GetDescription(); desc != "" {
+		fmt.Printf("Description: %s\n", desc)
+	}
+	fmt.Printf("Model: %s\n", r.AgentToRun.GetModelIdentifier())
+	if tools := r.AgentToRun.GetTools(); len(tools) > 0 {
+		fmt.Println("Available Tools:")
+		for _, tool := range tools {
+			fmt.Printf("  - %s: %s\n", tool.Name(), tool.Description())
+		}
+	}
+	fmt.Println("------------------------------------")
+	fmt.Println("Type 'exit' or 'quit' to stop.")
 }

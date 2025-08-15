@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/KennethanCeyer/adk-go/agents/interfaces"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
 	"github.com/KennethanCeyer/adk-go/tools"
@@ -14,11 +15,11 @@ import (
 type SequentialAgent struct {
 	AgentName        string
 	AgentDescription string
-	SubAgents        []LlmAgent
+	SubAgents        []interfaces.LlmAgent
 }
 
 // NewSequentialAgent creates a new SequentialAgent.
-func NewSequentialAgent(name, description string, subAgents []LlmAgent) *SequentialAgent {
+func NewSequentialAgent(name, description string, subAgents []interfaces.LlmAgent) *SequentialAgent {
 	return &SequentialAgent{
 		AgentName:        name,
 		AgentDescription: description,
@@ -26,12 +27,12 @@ func NewSequentialAgent(name, description string, subAgents []LlmAgent) *Sequent
 	}
 }
 
-func (a *SequentialAgent) GetName() string                        { return a.AgentName }
-func (a *SequentialAgent) GetDescription() string                 { return a.AgentDescription }
-func (a *SequentialAgent) GetModelIdentifier() string             { return "workflow-sequential" }
+func (a *SequentialAgent) GetName() string                            { return a.AgentName }
+func (a *SequentialAgent) GetDescription() string                     { return a.AgentDescription }
+func (a *SequentialAgent) GetModelIdentifier() string                 { return "workflow-sequential" }
 func (a *SequentialAgent) GetSystemInstruction() *modelstypes.Message { return nil }
-func (a *SequentialAgent) GetTools() []tools.Tool                 { return nil }
-func (a *SequentialAgent) GetLLMProvider() llmproviders.LLMProvider { return nil }
+func (a *SequentialAgent) GetTools() []tools.Tool                     { return nil }
+func (a *SequentialAgent) GetLLMProvider() llmproviders.LLMProvider   { return nil }
 
 // Process executes sub-agents sequentially.
 func (a *SequentialAgent) Process(

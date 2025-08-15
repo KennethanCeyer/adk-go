@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"strings"
 
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
@@ -114,27 +113,19 @@ func convertADKMessagesToGenaiContent(messages []modelstypes.Message) []*genai.C
 			var genaiPart genai.Part
 			if p.Text != nil { genaiPart = genai.Text(*p.Text)
 			} else if p.FunctionCall != nil {
-				// Ensure args are of type map[string]any for genai.FunctionCall
-				argsMap, ok := p.FunctionCall.Args.(map[string]any)
-				if !ok && p.FunctionCall.Args != nil {
-					log.Printf("Warning: FunctionCall args for '%s' is not map[string]any, but %T. Attempting to convert.", p.FunctionCall.Name, p.FunctionCall.Args)
-					// Attempt a reflection-based conversion if not the right type, though this is brittle.
-					// A better solution is to ensure the caller provides the correct type.
-					v := reflect.ValueOf(p.FunctionCall.Args)
-					if v.Kind() == reflect.Map {
-						argsMap = make(map[string]any)
-						for _, key := range v.MapKeys() {
-							argsMap[key.String()] = v.MapIndex(key).Interface()
-						}
-						ok = true
-					}
-				}
-				if ok && adkMessage.Role == "model" {
-					genaiPart = genai.FunctionCall{Name: p.FunctionCall.Name, Args: argsMap}
+				// The ADK FunctionCall.Args is already map[string]any, so no assertion is needed.
+				if adkMessage.Role == "model" {
+					genaiPart = genai.FunctionCall{Name: p.FunctionCall.Name, Args: p.FunctionCall.Args}
 				} else {
 					continue
 				}
-			} else if p.FunctionResponse != nil { genaiPart = genai.FunctionResponse{Name: p.FunctionResponse.Name, Response: p.FunctionResponse.Response}
+			} else if p.FunctionResponse != nil {
+				if respMap, ok := p.FunctionResponse.Response.(map[string]any); ok {
+					genaiPart = genai.FunctionResponse{Name: p.FunctionResponse.Name, Response: respMap}
+				} else {
+					log.Printf("Warning: FunctionResponse.Response for tool '%s' is not a map[string]any, but %T. Skipping part.", p.FunctionResponse.Name, p.FunctionResponse.Response)
+					continue
+				}
 			} else { continue }
 			content.Parts = append(content.Parts, genaiPart)
 		}
@@ -158,12 +149,8 @@ func convertGenaiCandidateToADKMessage(candidate *genai.Candidate) *modelstypes.
 		switch v := p.(type) {
 		case genai.Text: text := string(v); adkPart.Text = &text
 		case genai.FunctionCall:
-			if argsMap, ok := v.Args.(map[string]any); ok {
-				adkPart.FunctionCall = &modelstypes.FunctionCall{Name: v.Name, Args: argsMap}
-			} else {
-				log.Printf("Warning: Received FunctionCall with non-map args from LLM: %T", v.Args)
-				continue
-			}
+			// The genai.FunctionCall.Args is map[string]any, so no assertion is needed.
+			adkPart.FunctionCall = &modelstypes.FunctionCall{Name: v.Name, Args: v.Args}
 		default: unsupportedText := fmt.Sprintf("[LLM Part Type %T]", v); adkPart.Text = &unsupportedText
 		}
 		adkMessage.Parts = append(adkMessage.Parts, adkPart)

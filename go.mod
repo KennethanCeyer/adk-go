@@ -2,7 +2,7 @@ module github.com/KennethanCeyer/adk-go
 
 go 1.24.1
 
-toolchain go1.24.1
+replace github.com/KennethanCeyer/adk-go => ./
 
 require (
 	github.com/google/generative-ai-go v0.20.1
