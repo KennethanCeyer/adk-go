@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title>ADK-Go Web UI</title>
     <style>
@@ -15,6 +15,16 @@
         background: white;
         border: 1px solid #ddd;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      #header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #ddd;
+        background-color: #fafafa;
+        color: #333;
+      }
+      #header h1 {
+        margin: 0;
+        font-size: 1.2em;
       }
       #messages {
         list-style-type: none;
@@ -69,6 +79,9 @@
   </head>
   <body>
     <div id="chat-container">
+      <div id="header">
+        <h1 id="agent-name">ADK-Go Agent</h1>
+      </div>
       <div id="status">Connecting...</div>
       <ul id="messages"></ul>
       <form id="form" action="">
@@ -85,6 +98,7 @@
       const input = document.getElementById("input");
       const messages = document.getElementById("messages");
       const status = document.getElementById("status");
+      const agentNameHeader = document.getElementById("agent-name");
 
       const ws = new WebSocket(`ws://${location.host}/ws`);
 
@@ -102,7 +116,14 @@
       };
 
       ws.onmessage = (event) => {
-        addMessage(event.data, "agent-message");
+        const data = event.data;
+        if (data.startsWith("system:agent_name:")) {
+          const agentName = data.substring("system:agent_name:".length);
+          agentNameHeader.textContent = `Agent: ${agentName}`;
+          document.title = `${agentName} - ADK-Go`;
+        } else {
+          addMessage(data, "agent-message");
+        }
       };
 
       form.addEventListener("submit", (e) => {

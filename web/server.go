@@ -1,16 +1,15 @@
 package web
 
 import (
-	"embed"
-	"io/fs"
+	_ "embed"
 	"log"
 	"net/http"
 
 	"github.com/KennethanCeyer/adk-go/examples"
 )
 
-//go:embed static
-var staticFiles embed.FS
+//go:embed index.html
+var indexHTML []byte
 
 // StartServer initializes and starts the web server.
 func StartServer(addr, agentName string) {
@@ -27,12 +26,14 @@ func StartServer(addr, agentName string) {
 
 	http.HandleFunc("/ws", handler.ServeWS)
 
-	// Serve static files from the embedded filesystem.
-	staticFS, err := fs.Sub(staticFiles, "static")
-	if err != nil {
-		log.Fatalf("Failed to create sub filesystem for static files: %v", err)
-	}
-	http.Handle("/", http.FileServer(http.FS(staticFS)))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(indexHTML)
+	})
 
 	log.Printf("Starting web server for agent '%s' on %s", agentName, addr)
 	log.Printf("Open http://localhost%s in your browser.", addr)
