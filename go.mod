@@ -6,6 +6,7 @@ replace github.com/KennethanCeyer/adk-go => ./
 
 require (
 	github.com/google/generative-ai-go v0.20.1
+	github.com/gorilla/websocket v1.5.3
 	google.golang.org/api v0.234.0
 )
 
@@ -33,7 +34,7 @@ require (
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect

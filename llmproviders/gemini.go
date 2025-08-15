@@ -188,37 +188,67 @@ func (g *GeminiLLMProvider) GenerateContent(
         latestPartsToSend = []genai.Part{genai.Text("")} // Send a minimal valid part
     }
 
+	// Aggregate the streaming response.
 	iter := chatSession.SendMessageStream(ctx, latestPartsToSend...)
-	var aggResp genai.GenerateContentResponse; var aggParts []genai.Part
+	var aggregatedParts []genai.Part
+	var finalCandidate *genai.Candidate
+
 	for {
 		resp, err := iter.Next()
 		if err == iterator.Done {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("stream LLM: %w", err)
+			return nil, fmt.Errorf("failed during LLM stream: %w", err)
 		}
-		if aggResp.Candidates == nil && aggResp.PromptFeedback == nil { aggResp.PromptFeedback = resp.PromptFeedback }
-		if len(resp.Candidates) > 0 && resp.Candidates[0].Content != nil {
-			for _, sp := range resp.Candidates[0].Content.Parts {
-				if fc, ok := sp.(genai.FunctionCall); ok { aggParts = []genai.Part{fc}; break
-				} else if t, ok := sp.(genai.Text); ok {
-					if len(aggParts) > 0 {
-						if lt, lOk := aggParts[len(aggParts)-1].(genai.Text); lOk {
-							aggParts[len(aggParts)-1] = genai.Text(strings.Join([]string{string(lt), string(t)}, ""))
-							continue
-						}
-					}
-					aggParts = append(aggParts, t)
-				} else { aggParts = append(aggParts, sp) }
+
+		// The last response in the stream contains the final state (e.g., FinishReason).
+		if len(resp.Candidates) > 0 {
+			finalCandidate = resp.Candidates[0]
+			if finalCandidate.Content != nil {
+				aggregatedParts = append(aggregatedParts, finalCandidate.Content.Parts...)
 			}
-			aggResp.Candidates = []*genai.Candidate{{FinishReason: resp.Candidates[0].FinishReason}}
 		}
 	}
-	if len(aggResp.Candidates) == 0 { aggResp.Candidates = []*genai.Candidate{{}} }
-	if aggResp.Candidates[0].Content == nil { aggResp.Candidates[0].Content = &genai.Content{} }
-	aggResp.Candidates[0].Content.Parts = aggParts
-	aggResp.Candidates[0].Content.Role = "model"
 
-	return convertGenaiCandidateToADKMessage(aggResp.Candidates[0]), nil
+	// Consolidate aggregated text parts.
+	consolidatedParts := consolidateTextParts(aggregatedParts)
+
+	// Reconstruct a final candidate for conversion.
+	if finalCandidate == nil {
+		finalCandidate = &genai.Candidate{} // Create a blank candidate if stream was empty.
+	}
+	finalCandidate.Content = &genai.Content{
+		Parts: consolidatedParts,
+		Role:  "model",
+	}
+
+	return convertGenaiCandidateToADKMessage(finalCandidate), nil
+}
+
+// consolidateTextParts merges consecutive Text parts in a slice of genai.Part.
+func consolidateTextParts(parts []genai.Part) []genai.Part {
+	if len(parts) == 0 {
+		return nil
+	}
+	var result []genai.Part
+	var textBuffer strings.Builder
+
+	for _, part := range parts {
+		if t, ok := part.(genai.Text); ok {
+			textBuffer.WriteString(string(t))
+		} else {
+			// If there's pending text, write it out before the non-text part.
+			if textBuffer.Len() > 0 {
+				result = append(result, genai.Text(textBuffer.String()))
+				textBuffer.Reset()
+			}
+			result = append(result, part)
+		}
+	}
+	// Append any remaining text from the buffer.
+	if textBuffer.Len() > 0 {
+		result = append(result, genai.Text(textBuffer.String()))
+	}
+	return result
 }

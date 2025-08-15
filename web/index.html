@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ADK-Go Web UI</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      #chat-container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        border: 1px solid #ddd;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      #messages {
+        list-style-type: none;
+        margin: 0;
+        padding: 20px;
+        height: 60vh;
+        overflow-y: scroll;
+        border-bottom: 1px solid #ddd;
+      }
+      #messages li {
+        padding: 8px 12px;
+        margin-bottom: 10px;
+        border-radius: 7px;
+        line-height: 1.4;
+        max-width: 70%;
+        word-wrap: break-word;
+      }
+      .user-message {
+        background-color: #dcf8c6;
+        margin-left: auto;
+      }
+      .agent-message {
+        background-color: #f1f0f0;
+      }
+      #form {
+        display: flex;
+        padding: 20px;
+      }
+      #input {
+        border: 1px solid #ddd;
+        padding: 10px;
+        flex-grow: 1;
+        border-radius: 5px;
+      }
+      #form button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        margin-left: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #status {
+        padding: 5px 20px;
+        font-size: 0.8em;
+        color: #888;
+        background-color: #fafafa;
+        border-bottom: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chat-container">
+      <div id="status">Connecting...</div>
+      <ul id="messages"></ul>
+      <form id="form" action="">
+        <input
+          id="input"
+          autocomplete="off"
+          placeholder="Type your message..."
+        /><button>Send</button>
+      </form>
+    </div>
+
+    <script>
+      const form = document.getElementById("form");
+      const input = document.getElementById("input");
+      const messages = document.getElementById("messages");
+      const status = document.getElementById("status");
+
+      const ws = new WebSocket(`ws://${location.host}/ws`);
+
+      ws.onopen = () => {
+        status.textContent = "Connected";
+        status.style.color = "green";
+      };
+      ws.onclose = () => {
+        status.textContent = "Disconnected";
+        status.style.color = "red";
+      };
+      ws.onerror = (error) => {
+        console.error("WebSocket Error:", error);
+        status.textContent = "Connection Error";
+      };
+
+      ws.onmessage = (event) => {
+        addMessage(event.data, "agent-message");
+      };
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (input.value) {
+          addMessage(input.value, "user-message");
+          ws.send(input.value);
+          input.value = "";
+        }
+      });
+
+      function addMessage(text, className) {
+        const item = document.createElement("li");
+        item.className = className;
+        item.textContent = text;
+        messages.appendChild(item);
+        messages.scrollTop = messages.scrollHeight;
+      }
+    </script>
+  </body>
+</html>

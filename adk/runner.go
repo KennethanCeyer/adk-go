@@ -49,9 +49,11 @@ func (r *SimpleCLIRunner) Start(ctx context.Context) {
 			return
 		}
 		userInputText := strings.TrimSpace(scanner.Text())
+		normalizedInput := strings.ToLower(userInputText)
+		normalizedInput = strings.TrimRight(normalizedInput, "()") // Also trim parentheses
 
-		if strings.ToLower(userInputText) == "exit" || strings.ToLower(userInputText) == "quit" {
-			fmt.Println("Exiting agent.")
+		if normalizedInput == "exit" || normalizedInput == "quit" {
+			fmt.Println("\nExiting agent.")
 			return
 		}
 		if userInputText == "" {
@@ -106,7 +108,12 @@ func (r *SimpleCLIRunner) printAgentInfo() {
 	if desc := r.AgentToRun.GetDescription(); desc != "" {
 		fmt.Printf("Description: %s\n", desc)
 	}
-	fmt.Printf("Model: %s\n", r.AgentToRun.GetModelIdentifier())
+	// Check if the agent is a workflow agent without its own model
+	if model := r.AgentToRun.GetModelIdentifier(); strings.HasPrefix(model, "workflow-") {
+		fmt.Println("Model: (This is a workflow agent)")
+	} else {
+		fmt.Printf("Model: %s\n", model)
+	}
 	if tools := r.AgentToRun.GetTools(); len(tools) > 0 {
 		fmt.Println("Available Tools:")
 		for _, tool := range tools {

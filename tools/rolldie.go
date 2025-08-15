@@ -15,7 +15,7 @@ func NewRollDieTool() *RollDieTool {
 	return &RollDieTool{}
 }
 
-func (t *RollDieTool) Name() string { return "roll_die" }
+func (t *RollDieTool) Name() string { return "rollDie" }
 
 func (t *RollDieTool) Description() string {
 	return "Rolls a die with a specified number of sides and returns the result."
@@ -58,5 +58,5 @@ func (t *RollDieTool) Execute(ctx context.Context, args any) (any, error) {
 	if err != nil { return nil, fmt.Errorf("rolldie: rand.Int failed: %w", err) }
 	result := nBig.Int64() + 1
 	log.Printf("RollDieTool: Executed. Rolled %d (d%d)", result, sides)
-	return map[string]any{"result": result, "sides_rolled": sides}, nil
+	return map[string]any{"result": result, "sidesRolled": sides}, nil
 }

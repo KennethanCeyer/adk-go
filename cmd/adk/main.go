@@ -12,11 +12,13 @@ import (
 
 	"github.com/KennethanCeyer/adk-go/adk"
 	"github.com/KennethanCeyer/adk-go/examples"
+	"github.com/KennethanCeyer/adk-go/web"
 
 	// Import example packages to trigger their init() functions for agent registration.
 	// The blank identifier `_` is used because we only need the side effects of the import.
 	_ "github.com/KennethanCeyer/adk-go/examples/helloworld"
-	_ "github.com/KennethanCeyer/adk-go/examples/sequentialweather"
+	_ "github.com/KennethanCeyer/adk-go/examples/parallel_trip_planner"
+	_ "github.com/KennethanCeyer/adk-go/examples/sequential_weather"
 )
 
 func main() {
@@ -26,7 +28,7 @@ func main() {
 	}
 
 	command := os.Args[1]
-	// User-friendly check: if the first argument is a flag, they probably forgot the 'run' command.
+	// User-friendly check: if the first argument is a flag, they probably forgot the 'run' or 'web' command.
 	if strings.HasPrefix(command, "-") {
 		fmt.Printf("Error: Missing command. Did you mean 'adk run %s'?\n\n", strings.Join(os.Args[1:], " "))
 		printUsage()
@@ -36,6 +38,8 @@ func main() {
 	switch command {
 	case "run":
 		runCmd(os.Args[2:])
+	case "web":
+		webCmd(os.Args[2:])
 	// case "web":
 	// 	// Placeholder for 'adk web'
 	// 	fmt.Println("'web' command not yet implemented.")
@@ -52,25 +56,17 @@ func main() {
 func printUsage() {
 	fmt.Println("Usage: adk <command> [arguments]")
 	fmt.Println("\nAvailable commands:")
-	fmt.Println("  run                Run an agent")
+	fmt.Println("  run                Run an agent in the command line")
+	fmt.Println("  web                Start a web server with a UI for an agent")
 	// fmt.Println("  web                Start the ADK web UI")
 	// fmt.Println("  eval               Run evaluations for an agent")
-	fmt.Println("\nFlags for 'run' command:")
-	fmt.Printf("  -agent <name>      Name of the agent to run. Available: [%s]\n", strings.Join(examples.ListAgents(), ", "))
+	fmt.Println("\nAvailable agents for 'run' and 'web' commands:")
+	fmt.Printf("  %s\n", strings.Join(examples.ListAgents(), ", "))
 }
 
 func runCmd(args []string) {
-	runFlagSet := flag.NewFlagSet("run", flag.ExitOnError)
-	availableAgents := examples.ListAgents()
-	defaultAgent := "helloworld"
-	if len(availableAgents) == 0 {
-		log.Fatal("No agents are registered. Please check the 'examples' packages.")
-	}
-	if !contains(availableAgents, defaultAgent) {
-		defaultAgent = availableAgents[0]
-	}
-
-	agentName := runFlagSet.String("agent", defaultAgent, fmt.Sprintf("Name of the agent to run. Available: [%s]", strings.Join(availableAgents, ", ")))
+	runFlagSet := flag.NewFlagSet("run", flag.ContinueOnError)
+	agentName := newAgentFlag(runFlagSet)
 
 	err := runFlagSet.Parse(args)
 	if err != nil {
@@ -109,4 +105,35 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// newAgentFlag adds a standardized -agent flag to a given FlagSet.
+func newAgentFlag(fs *flag.FlagSet) *string {
+	availableAgents := examples.ListAgents()
+	defaultAgent := "helloworld"
+	if len(availableAgents) == 0 {
+		log.Fatal("No agents are registered. Please check the 'examples' packages.")
+	}
+	if !contains(availableAgents, defaultAgent) {
+		if len(availableAgents) > 0 {
+			defaultAgent = availableAgents[0]
+		}
+	}
+	usage := fmt.Sprintf("Name of the agent to run. Available: [%s]", strings.Join(availableAgents, ", "))
+	return fs.String("agent", defaultAgent, usage)
+}
+
+func webCmd(args []string) {
+	webFlagSet := flag.NewFlagSet("web", flag.ContinueOnError)
+	agentName := newAgentFlag(webFlagSet)
+	port := webFlagSet.String("port", "8080", "Port to run the web server on")
+
+	err := webFlagSet.Parse(args)
+	if err != nil {
+		// This will trigger if flags are invalid, e.g., -port=abc
+		log.Fatalf("Error parsing flags for web command: %v", err)
+	}
+
+	addr := ":" + *port
+	web.StartServer(addr, *agentName)
 }
