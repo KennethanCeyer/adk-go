@@ -8,14 +8,15 @@ import (
 	"os"
 	"strings"
 
-	adktypes "github.com/KennethanCeyer/adk-go/adk/types"
+	"github.com/KennethanCeyer/adk-go/agents"
+	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
 )
 
 type SimpleCLIRunner struct {
-	AgentToRun Agent
+	AgentToRun agents.LlmAgent
 }
 
-func NewSimpleCLIRunner(agent Agent) (*SimpleCLIRunner, error) {
+func NewSimpleCLIRunner(agent agents.LlmAgent) (*SimpleCLIRunner, error) {
 	if agent == nil {
 		return nil, fmt.Errorf("agent cannot be nil")
 	}
@@ -23,24 +24,39 @@ func NewSimpleCLIRunner(agent Agent) (*SimpleCLIRunner, error) {
 }
 
 func (r *SimpleCLIRunner) Start(ctx context.Context) {
-	fmt.Printf("--- Starting Agent: %s ---\n", r.AgentToRun.Name())
+	fmt.Printf("--- Starting Agent: %s ---\n", r.AgentToRun.GetName())
+	if r.AgentToRun.GetDescription() != "" {
+		fmt.Printf("Description: %s\n", r.AgentToRun.GetDescription())
+	}
+	fmt.Printf("Model: %s\n", r.AgentToRun.GetModelIdentifier())
+	if len(r.AgentToRun.GetTools()) > 0 {
+		fmt.Println("Available Tools:")
+		for _, tool := range r.AgentToRun.GetTools() {
+			fmt.Printf("  - %s: %s\n", tool.Name(), tool.Description())
+		}
+	}
+	fmt.Println("------------------------------------")
 	fmt.Println("Type 'exit' or 'quit' to stop.")
 
-	var history []adktypes.Message
+	var history []modelstypes.Message
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Runner context cancelled, shutting down.")
+			log.Println("Runner loop: Context cancelled. Exiting loop.")
 			return
 		default:
 		}
 
 		fmt.Print("[user]: ")
 		if !scanner.Scan() {
-			if err := scanner.Err(); err != nil {
-				log.Printf("Error reading input: %v", err)
+			if ctx.Err() != nil {
+				log.Println("Runner loop: Context cancelled during input scan. Exiting.")
+			} else if err := scanner.Err(); err != nil {
+				log.Printf("Input error: %v. Exiting.", err)
+			} else {
+				log.Println("EOF received on input. Exiting.")
 			}
 			return
 		}
@@ -54,35 +70,45 @@ func (r *SimpleCLIRunner) Start(ctx context.Context) {
 			continue
 		}
 
-		userMessage := adktypes.Message{Role: "user", Parts: []adktypes.Part{{Text: &userInputText}}}
+		userMessage := modelstypes.Message{Role: "user", Parts: []modelstypes.Part{{Text: &userInputText}}}
 
-		currentHistoryForCall := make([]adktypes.Message, len(history))
+		currentHistoryForCall := make([]modelstypes.Message, len(history))
 		copy(currentHistoryForCall, history)
 
 		agentResponse, err := r.AgentToRun.Process(ctx, currentHistoryForCall, userMessage)
 		if err != nil {
-			log.Printf("Error from agent %s: %v", r.AgentToRun.Name(), err)
-			fmt.Printf("[%s-error]: Sorry, I encountered an error: %v\n", r.AgentToRun.Name(), err)
+			if ctx.Err() != nil {
+				log.Printf("Agent Process call failed due to context cancellation: %v", err)
+				return
+			}
+			fmt.Printf("[%s-error]: I encountered an issue: %v\n", r.AgentToRun.Name(), err)
+			history = append(history, userMessage)
 			continue
 		}
 
 		history = append(history, userMessage)
-		history = append(history, agentResponse)
-
-		var responseTexts []string
-		for _, part := range agentResponse.Parts {
-			if part.Text != nil {
-				responseTexts = append(responseTexts, *part.Text)
-			}
-			if part.FunctionCall != nil {
-				responseTexts = append(responseTexts, fmt.Sprintf("[INFO: Agent should have handled FunctionCall: %s. This indicates an issue in BaseAgent.Process if seen by user.]", part.FunctionCall.Name))
-			}
+		if agentResponse != nil {
+			history = append(history, *agentResponse)
 		}
-		fmt.Printf("[%s]: %s\n", r.AgentToRun.Name(), strings.Join(responseTexts, "\n"))
 
-		const maxHistoryItems = 20
-		if len(history) > maxHistoryItems {
-			history = history[len(history)-maxHistoryItems:]
+		if agentResponse != nil && len(agentResponse.Parts) > 0 {
+			var responseTexts []string
+			for _, part := range agentResponse.Parts {
+				if part.Text != nil {
+					responseTexts = append(responseTexts, *part.Text)
+				}
+				if part.FunctionCall != nil {
+					log.Printf("Runner: Agent response unexpectedly contained FunctionCall: Name=%s.", part.FunctionCall.Name)
+				}
+			}
+			fmt.Printf("[%s]: %s\n", r.AgentToRun.GetName(), strings.Join(responseTexts, "\n"))
+		} else {
+			fmt.Printf("[%s]: (Agent returned no displayable content)\n", r.AgentToRun.GetName())
+		}
+
+		const maxHistoryTurns = 10
+		if len(history) > maxHistoryTurns*2 {
+			history = history[len(history)-(maxHistoryTurns*2):]
 		}
 	}
 }
