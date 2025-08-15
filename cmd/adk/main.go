@@ -15,7 +15,6 @@ import (
 	"github.com/KennethanCeyer/adk-go/sessions"
 	"github.com/KennethanCeyer/adk-go/web"
 
-	// Import example packages to trigger their init() functions.
 	_ "github.com/KennethanCeyer/adk-go/examples/file_based_chat"
 	_ "github.com/KennethanCeyer/adk-go/examples/financial_analyst"
 	_ "github.com/KennethanCeyer/adk-go/examples/helloworld"
@@ -31,7 +30,6 @@ func main() {
 	}
 
 	command := os.Args[1]
-	// User-friendly check: if the first argument is a flag, they probably forgot the 'run' or 'web' command.
 	if strings.HasPrefix(command, "-") {
 		fmt.Printf("Error: Missing command. Did you mean 'adk run %s'?\n\n", strings.Join(os.Args[1:], " "))
 		printUsage()
@@ -118,7 +116,6 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-// newAgentFlag adds a standardized -agent flag to a given FlagSet.
 func newAgentFlag(fs *flag.FlagSet) *string {
 	availableAgents := examples.ListAgents()
 	defaultAgent := "helloworld"

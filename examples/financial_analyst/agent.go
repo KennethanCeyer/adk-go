@@ -14,7 +14,6 @@ import (
 
 const financialAnalystInstruction = "You are a helpful financial analyst. When the conversation starts, introduce yourself and what you can do. For example: 'Hello, I am a financial analyst agent. I can provide the latest stock price and company news for a given ticker symbol. Which company are you interested in?'. To create a report, you must use your tools to gather the latest stock price and company news. Use the `get_stock_price` tool for prices and the `get_company_news` tool for news. Synthesize the information from these tools into a concise report for the user."
 
-// NewFinancialAnalystAgent creates a new financial analyst agent.
 func NewFinancialAnalystAgent() (agentinterfaces.LlmAgent, error) {
 	provider, err := llmproviders.NewGeminiLLMProvider()
 	if err != nil {

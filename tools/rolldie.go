@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	// "github.com/KennethanCeyer/adk-go/adk" // adk.Tool is implemented
 )
 
 type RollDieTool struct{}
@@ -48,7 +47,6 @@ func (t *RollDieTool) Execute(ctx context.Context, args any) (any, error) {
 	case int:
 		if v <= 0 { return nil, fmt.Errorf("rolldie: 'sides' (int) must be positive, got %d", v) }
 		sides = int64(v)
-	// Consider json.Number if LLM strictly adheres to JSON spec for numbers from schema
 	default:
 		return nil, fmt.Errorf("rolldie: 'sides' argument must be numeric, got type %T", sidesVal)
 	}

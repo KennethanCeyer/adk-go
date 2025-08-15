@@ -13,7 +13,6 @@ import (
 	"github.com/KennethanCeyer/adk-go/tools"
 )
 
-// ParallelAgent executes a list of sub-agents concurrently and synthesizes their results.
 type ParallelAgent struct {
 	AgentName         string
 	AgentDescription  string
@@ -23,7 +22,6 @@ type ParallelAgent struct {
 	SysInstruction    *modelstypes.Message
 }
 
-// NewParallelAgent creates a new ParallelAgent.
 func NewParallelAgent(name, description, modelID string, systemInstruction *modelstypes.Message, provider llmproviders.LLMProvider, subAgents []interfaces.LlmAgent) *ParallelAgent {
 	return &ParallelAgent{
 		AgentName:         name,
@@ -39,10 +37,9 @@ func (a *ParallelAgent) GetName() string                            { return a.A
 func (a *ParallelAgent) GetDescription() string                     { return a.AgentDescription }
 func (a *ParallelAgent) GetModelIdentifier() string                 { return a.ModelID }
 func (a *ParallelAgent) GetSystemInstruction() *modelstypes.Message { return a.SysInstruction }
-func (a *ParallelAgent) GetTools() []tools.Tool                     { return nil } // The parallel agent itself doesn't have tools, its sub-agents do.
+func (a *ParallelAgent) GetTools() []tools.Tool                     { return nil }
 func (a *ParallelAgent) GetLLMProvider() llmproviders.LLMProvider   { return a.Provider }
 
-// Process executes sub-agents concurrently and then uses an LLM to synthesize the results.
 func (a *ParallelAgent) Process(
 	ctx context.Context,
 	history []modelstypes.Message,
@@ -58,7 +55,6 @@ func (a *ParallelAgent) Process(
 		go func(sa interfaces.LlmAgent) {
 			defer wg.Done()
 			invocation.SendInternalLog(ctx, "Running sub-agent in parallel: %s", sa.GetName())
-			// Each sub-agent gets the same initial history and input.
 			response, err := sa.Process(ctx, history, latestContent)
 			if err != nil {
 				errChan <- fmt.Errorf("sub-agent '%s' failed: %w", sa.GetName(), err)

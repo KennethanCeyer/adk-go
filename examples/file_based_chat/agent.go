@@ -33,6 +33,5 @@ func init() {
 		[]tools.Tool{NewReadFileTool(), NewWriteFileTool()},
 	)
 
-	// Register the successfully created agent. The error is nil.
 	examples.RegisterAgent("file_based_chat", agent, nil)
 }

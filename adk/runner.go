@@ -54,7 +54,7 @@ func (r *SimpleCLIRunner) Start(ctx context.Context) {
 		}
 		userInputText := strings.TrimSpace(scanner.Text())
 		normalizedInput := strings.ToLower(userInputText)
-		normalizedInput = strings.TrimRight(normalizedInput, "()") // Also trim parentheses
+		normalizedInput = strings.TrimRight(normalizedInput, "()")
 
 		if normalizedInput == "exit" || normalizedInput == "quit" {
 			fmt.Println("\nExiting agent.")
@@ -103,7 +103,6 @@ func (r *SimpleCLIRunner) Start(ctx context.Context) {
 			r.Session.History = r.Session.History[len(r.Session.History)-(maxHistoryTurns*2):]
 		}
 
-		// Save the session state after each turn.
 		sessions.Save(r.Session)
 	}
 }
@@ -113,7 +112,6 @@ func (r *SimpleCLIRunner) printAgentInfo() {
 	if desc := r.AgentToRun.GetDescription(); desc != "" {
 		fmt.Printf("Description: %s\n", desc)
 	}
-	// Check if the agent is a workflow agent without its own model
 	if model := r.AgentToRun.GetModelIdentifier(); strings.HasPrefix(model, "workflow-") {
 		fmt.Println("Model: (This is a workflow agent)")
 	} else {

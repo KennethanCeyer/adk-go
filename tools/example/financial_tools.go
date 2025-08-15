@@ -10,8 +10,6 @@ import (
 	"github.com/google/generative-ai-go/genai"
 )
 
-// --- Stock Price Tool ---
-
 type StockPriceTool struct{}
 
 func NewStockPriceTool() tools.Tool {
@@ -59,8 +57,6 @@ func (t *StockPriceTool) Execute(ctx context.Context, args any) (any, error) {
 	}, nil
 }
 
-// --- Company News Tool ---
-
 type CompanyNewsTool struct{}
 
 func NewCompanyNewsTool() tools.Tool {
@@ -98,15 +94,12 @@ func (t *CompanyNewsTool) Execute(ctx context.Context, args any) (any, error) {
 		return nil, fmt.Errorf("get_company_news: invalid or missing 'ticker_symbol' argument")
 	}
 
-	// Mock news headlines
 	headlines := []string{
 		fmt.Sprintf("%s announces record Q3 earnings, stock surges.", ticker),
 		fmt.Sprintf("New product launch from %s receives positive reviews.", ticker),
 		fmt.Sprintf("Analysts upgrade %s to 'Buy' following innovation showcase.", ticker),
 	}
 
-	// The genai library's internal protobuf converter has difficulty with
-	// []string, but handles []any correctly by converting each element.
 	headlinesAsAny := make([]any, len(headlines))
 	for i, h := range headlines {
 		headlinesAsAny[i] = h

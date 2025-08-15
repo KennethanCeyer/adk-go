@@ -5,7 +5,6 @@ import (
 	"github.com/KennethanCeyer/adk-go/tools"
 )
 
-// LlmRequest represents a request to be sent to the LLM, primarily for configuration.
 type LlmRequest struct {
 	ModelIdentifier   string
 	SystemInstruction *modelstypes.Message
@@ -14,7 +13,6 @@ type LlmRequest struct {
 	LatestMessage     modelstypes.Message
 }
 
-// LlmResponse represents a response received from the LLM.
 type LlmResponse struct {
 	Content *modelstypes.Message
 }

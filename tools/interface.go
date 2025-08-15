@@ -2,7 +2,6 @@ package tools
 
 import "context"
 
-// Tool is the interface that all tools must implement.
 type Tool interface {
 	Name() string
 	Description() string

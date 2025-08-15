@@ -11,10 +11,8 @@ import (
 	"github.com/KennethanCeyer/adk-go/tools"
 )
 
-// StopCondition is a function that determines if a loop should stop.
 type StopCondition func(latestResponse *modelstypes.Message) bool
 
-// LoopAgent executes its sub-agents repeatedly until a condition is met.
 type LoopAgent struct {
 	AgentName        string
 	AgentDescription string
@@ -23,7 +21,6 @@ type LoopAgent struct {
 	StopWhen         StopCondition
 }
 
-// NewLoopAgent creates a new LoopAgent.
 func NewLoopAgent(name, description string, subAgents []interfaces.LlmAgent, maxIterations int, stopWhen StopCondition) *LoopAgent {
 	return &LoopAgent{
 		AgentName:        name,
@@ -41,7 +38,6 @@ func (a *LoopAgent) GetSystemInstruction() *modelstypes.Message { return nil }
 func (a *LoopAgent) GetTools() []tools.Tool                     { return nil }
 func (a *LoopAgent) GetLLMProvider() llmproviders.LLMProvider   { return nil }
 
-// Process executes sub-agents in a loop.
 func (a *LoopAgent) Process(
 	ctx context.Context,
 	history []modelstypes.Message,

@@ -26,7 +26,6 @@ func NewGeminiLLMProvider() (*GeminiLLMProvider, error) {
 	return &GeminiLLMProvider{apiKey: apiKey}, nil
 }
 
-// parseSchema recursively converts a map-based schema definition into a genai.Schema.
 func parseSchema(schemaMap map[string]any) *genai.Schema {
 	if schemaMap == nil {
 		return nil
@@ -188,7 +187,6 @@ func (g *GeminiLLMProvider) GenerateContent(
         latestPartsToSend = []genai.Part{genai.Text("")} // Send a minimal valid part
     }
 
-	// Aggregate the streaming response.
 	iter := chatSession.SendMessageStream(ctx, latestPartsToSend...)
 	var aggregatedParts []genai.Part
 	var finalCandidate *genai.Candidate
@@ -211,10 +209,8 @@ func (g *GeminiLLMProvider) GenerateContent(
 		}
 	}
 
-	// Consolidate aggregated text parts.
 	consolidatedParts := consolidateTextParts(aggregatedParts)
 
-	// Reconstruct a final candidate for conversion.
 	if finalCandidate == nil {
 		finalCandidate = &genai.Candidate{} // Create a blank candidate if stream was empty.
 	}
@@ -226,7 +222,6 @@ func (g *GeminiLLMProvider) GenerateContent(
 	return convertGenaiCandidateToADKMessage(finalCandidate), nil
 }
 
-// consolidateTextParts merges consecutive Text parts in a slice of genai.Part.
 func consolidateTextParts(parts []genai.Part) []genai.Part {
 	if len(parts) == 0 {
 		return nil
@@ -246,7 +241,6 @@ func consolidateTextParts(parts []genai.Part) []genai.Part {
 			result = append(result, part)
 		}
 	}
-	// Append any remaining text from the buffer.
 	if textBuffer.Len() > 0 {
 		result = append(result, genai.Text(textBuffer.String()))
 	}

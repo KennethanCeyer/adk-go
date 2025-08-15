@@ -9,12 +9,10 @@ import (
 	"github.com/google/generative-ai-go/genai"
 )
 
-// NumberGuesserTool is a tool for a number guessing game.
 type NumberGuesserTool struct {
 	secret int
 }
 
-// NewNumberGuesserTool creates a tool with a random secret number between 1 and 100.
 func NewNumberGuesserTool() *NumberGuesserTool {
 	// Seed the random number generator
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))

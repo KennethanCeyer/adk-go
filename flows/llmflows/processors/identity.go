@@ -11,10 +11,8 @@ import (
 	"github.com/KennethanCeyer/adk-go/models/types"
 )
 
-// IdentityLlmRequestProcessor gives the agent identity from the framework.
 type IdentityLlmRequestProcessor struct{}
 
-// RunAsync implements the BaseLlmRequestProcessor interface.
 func (p *IdentityLlmRequestProcessor) RunAsync(invocationCtx *invocation.InvocationContext, llmReq *models.LlmRequest) (<-chan *events.Event, error) {
 	outCh := make(chan *events.Event)
 	go func() {

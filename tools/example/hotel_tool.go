@@ -7,7 +7,6 @@ import (
 	"github.com/google/generative-ai-go/genai"
 )
 
-// HotelTool is a simple tool that returns mock hotel data.
 type HotelTool struct{}
 
 // NewHotelTool creates a HotelTool.

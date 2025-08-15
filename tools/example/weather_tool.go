@@ -7,7 +7,6 @@ import (
 	"github.com/google/generative-ai-go/genai"
 )
 
-// WeatherTool is a simple tool that returns mock weather data.
 type WeatherTool struct{}
 
 // NewWeatherTool creates a WeatherTool.

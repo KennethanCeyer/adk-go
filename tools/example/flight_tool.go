@@ -7,10 +7,8 @@ import (
 	"github.com/google/generative-ai-go/genai"
 )
 
-// FlightTool is a simple tool that returns mock flight data.
 type FlightTool struct{}
 
-// NewFlightTool creates a FlightTool.
 func NewFlightTool() *FlightTool {
 	return &FlightTool{}
 }

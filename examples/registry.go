@@ -8,7 +8,6 @@ import (
 	"github.com/KennethanCeyer/adk-go/agents/interfaces"
 )
 
-// AgentDefinition holds the metadata for an agent, including any initialization error.
 type AgentDefinition struct {
 	Name      string
 	InitError string
@@ -20,8 +19,6 @@ var (
 	agentDefinitions = make(map[string]*AgentDefinition)
 )
 
-// RegisterAgent attempts to register an agent. If the agent is nil (due to an init error),
-// it still records the definition with the error message so the UI can show its status.
 func RegisterAgent(name string, agent interfaces.LlmAgent, err error) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -29,23 +26,19 @@ func RegisterAgent(name string, agent interfaces.LlmAgent, err error) {
 	var errMsg string
 	if err != nil {
 		errMsg = err.Error()
-		// This log matches the format from previous issues, which is helpful for debugging.
 		log.Printf("Warning: Could not initialize '%s' agent: %v", name, err)
 	}
 
-	// Always register the definition so the UI can see it.
 	agentDefinitions[name] = &AgentDefinition{
 		Name:      name,
 		InitError: errMsg,
 	}
 
-	// Only register the agent instance if it was created successfully.
 	if agent != nil && err == nil {
 		agents[name] = agent
 	}
 }
 
-// GetAgent retrieves an agent from the registry by name.
 func GetAgent(name string) (interfaces.LlmAgent, bool) {
 	mu.RLock()
 	defer mu.RUnlock()
@@ -53,7 +46,6 @@ func GetAgent(name string) (interfaces.LlmAgent, bool) {
 	return agent, found
 }
 
-// ListAgents returns a sorted list of all *successfully initialized* agent names.
 func ListAgents() []string {
 	mu.RLock()
 	defer mu.RUnlock()
@@ -65,8 +57,6 @@ func ListAgents() []string {
 	return names
 }
 
-// GetAllAgentDefinitions returns all registered agent definitions, including those that failed to initialize.
-// This is used by the web UI to show the status of all agents.
 func GetAllAgentDefinitions() []*AgentDefinition {
 	mu.RLock()
 	defer mu.RUnlock()

@@ -7,7 +7,6 @@ import (
 	"github.com/KennethanCeyer/adk-go/tools"
 )
 
-// CallbackContext provides context to callback functions.
 type CallbackContext struct {
 	AgentName    string
 	InvocationID string

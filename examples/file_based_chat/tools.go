@@ -8,10 +8,8 @@ import (
 	"github.com/KennethanCeyer/adk-go/tools"
 )
 
-// ReadFileTool is a tool for reading the content of a file.
 type ReadFileTool struct{}
 
-// NewReadFileTool creates a new ReadFileTool.
 func NewReadFileTool() tools.Tool {
 	return &ReadFileTool{}
 }
@@ -57,10 +55,8 @@ func (t *ReadFileTool) Execute(ctx context.Context, args any) (any, error) {
 	}, nil
 }
 
-// WriteFileTool is a tool for writing content to a file.
 type WriteFileTool struct{}
 
-// NewWriteFileTool creates a new WriteFileTool.
 func NewWriteFileTool() tools.Tool {
 	return &WriteFileTool{}
 }

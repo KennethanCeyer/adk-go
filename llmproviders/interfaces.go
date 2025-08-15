@@ -7,7 +7,6 @@ import (
 	"github.com/KennethanCeyer/adk-go/tools"
 )
 
-// LLMProvider defines the interface for interacting with a Large Language Model.
 type LLMProvider interface {
 	GenerateContent(
 		ctx context.Context,

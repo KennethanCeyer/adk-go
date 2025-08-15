@@ -11,14 +11,12 @@ import (
 	"github.com/KennethanCeyer/adk-go/tools"
 )
 
-// SequentialAgent executes a list of sub-agents in a fixed order.
 type SequentialAgent struct {
 	AgentName        string
 	AgentDescription string
 	SubAgents        []interfaces.LlmAgent
 }
 
-// NewSequentialAgent creates a new SequentialAgent.
 func NewSequentialAgent(name, description string, subAgents []interfaces.LlmAgent) *SequentialAgent {
 	return &SequentialAgent{
 		AgentName:        name,
@@ -34,7 +32,6 @@ func (a *SequentialAgent) GetSystemInstruction() *modelstypes.Message { return n
 func (a *SequentialAgent) GetTools() []tools.Tool                     { return nil }
 func (a *SequentialAgent) GetLLMProvider() llmproviders.LLMProvider   { return nil }
 
-// Process executes sub-agents sequentially.
 func (a *SequentialAgent) Process(
 	ctx context.Context,
 	history []modelstypes.Message,
