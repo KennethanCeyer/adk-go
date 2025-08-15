@@ -1,8 +1,6 @@
 package file_based_chat
 
 import (
-	"log"
-
 	"github.com/KennethanCeyer/adk-go/agents"
 	"github.com/KennethanCeyer/adk-go/examples"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
@@ -13,11 +11,12 @@ import (
 func init() {
 	provider, err := llmproviders.NewGeminiLLMProvider()
 	if err != nil {
-		log.Printf("failed to create gemini provider for file_based_chat: %v", err)
+		// Register the agent with its initialization error.
+		examples.RegisterAgent("file_based_chat", nil, err)
 		return
 	}
 
-	systemText := "You are a helpful assistant with the ability to read and write files. Use the provided tools to manage files based on the user's request."
+	systemText := "You are a helpful assistant that specializes in reading and writing local files. When the conversation starts with a simple greeting, introduce yourself and your capabilities. For example: 'Hello! I can read and write files for you. You can ask me to do things like: \\\"read notes.txt\\\" or \\\"write 'Hello World' to a new file named welcome.txt\\\". What would you like to do?'. For other requests, use the provided tools to manage files as requested by the user."
 	systemInstruction := &types.Message{
 		Role: "system",
 		Parts: []types.Part{
@@ -34,5 +33,6 @@ func init() {
 		[]tools.Tool{NewReadFileTool(), NewWriteFileTool()},
 	)
 
-	examples.RegisterAgent("file_based_chat", agent)
+	// Register the successfully created agent. The error is nil.
+	examples.RegisterAgent("file_based_chat", agent, nil)
 }

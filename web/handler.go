@@ -126,7 +126,7 @@ func (h *WebSocketHandler) handleIncomingMessage(ctx context.Context, msgBytes [
 	agentCtx := invocation.WithUISender(ctx, uiSender)
 
 	// Process message with the agent.
-	response, err := h.agent.Process(agentCtx, h.sess.GetHistory(), userMessage)
+	response, err := h.agent.Process(agentCtx, h.sess.History, userMessage)
 	if err != nil {
 		log.Printf("Agent processing error: %v", err)
 		errorText := "I encountered an error: " + err.Error()

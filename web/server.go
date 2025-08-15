@@ -16,22 +16,21 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-//go:embed logo.png
-var logoPNG []byte
-
 // StartServer initializes and starts the web server.
 func StartServer(addr string) {
+	// Serve static files from the "static" directory.
+	// This allows serving CSS, JS, images, fonts, etc.
+	fs := http.FileServer(http.Dir("web/static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
 	// The WebSocket handler is now created per-connection, based on the requested agent.
 	http.HandleFunc("/ws", serveWS)
 
 	http.HandleFunc("/api/sessions", handleListSessions)
-	http.HandleFunc("/api/session/", handleGetSessionState) // Note the trailing slash
+	http.HandleFunc("/api/session/", handleSession) // Note the trailing slash
 	http.HandleFunc("/api/details", handleDetails)
 	http.HandleFunc("/api/graph", handleAgentGraph)
 	http.HandleFunc("/api/agents", handleListAgents)
-
-	// Serve the embedded logo.
-	http.HandleFunc("/logo.png", handleLogo)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -50,9 +49,27 @@ func StartServer(addr string) {
 }
 
 func handleListAgents(w http.ResponseWriter, r *http.Request) {
-	agentNames := examples.ListAgents()
+	// Return a more detailed list of agents, including their initialization status.
+	type AgentStatus struct {
+		Name        string `json:"name"`
+		Initialized bool   `json:"initialized"`
+		Error       string `json:"error,omitempty"`
+	}
+
+	allAgentDefs := examples.GetAllAgentDefinitions()
+	statuses := make([]AgentStatus, 0, len(allAgentDefs))
+	for _, def := range allAgentDefs {
+		// An agent is initialized if its InitError is empty.
+		initialized := def.InitError == ""
+		statuses = append(statuses, AgentStatus{
+			Name:        def.Name,
+			Initialized: initialized,
+			Error:       def.InitError,
+		})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(agentNames); err != nil {
+	if err := json.NewEncoder(w).Encode(statuses); err != nil {
 		log.Printf("Error encoding agent list: %v", err)
 		http.Error(w, "Failed to list agents", http.StatusInternalServerError)
 	}
@@ -72,7 +89,7 @@ func handleListSessions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleGetSessionState(w http.ResponseWriter, r *http.Request) {
+func handleSession(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/session/"), "/")
 	if len(parts) < 1 || parts[0] == "" {
 		http.Error(w, "Missing session ID", http.StatusBadRequest)
@@ -80,17 +97,38 @@ func handleGetSessionState(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionID := parts[0]
 
+	switch r.Method {
+	case http.MethodGet:
+		getSessionState(w, r, sessionID)
+	case http.MethodDelete:
+		deleteSession(w, r, sessionID)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func getSessionState(w http.ResponseWriter, r *http.Request, sessionID string) {
 	session, err := sessions.Get(sessionID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Session with ID '%s' not found", sessionID), http.StatusNotFound)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(session.State); err != nil {
 		log.Printf("Error encoding session state: %v", err)
 		http.Error(w, "Failed to encode session state", http.StatusInternalServerError)
 	}
+}
+
+func deleteSession(w http.ResponseWriter, r *http.Request, sessionID string) {
+	// This assumes a `Delete` function exists in your sessions package.
+	if err := sessions.Delete(sessionID); err != nil {
+		log.Printf("Error deleting session '%s': %v", sessionID, err)
+		http.Error(w, "Failed to delete session", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Deleted session: %s", sessionID)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleDetails(w http.ResponseWriter, r *http.Request) {
@@ -149,12 +187,6 @@ func handleAgentGraph(w http.ResponseWriter, r *http.Request) {
 	dotSource := graph.Build(agent)
 	w.Header().Set("Content-Type", "text/vnd.graphviz")
 	_, _ = w.Write([]byte(dotSource))
-}
-
-func handleLogo(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "image/png")
-	w.Header().Set("Cache-Control", "public, max-age=3600") // Cache for 1 hour
-	_, _ = w.Write(logoPNG)
 }
 
 // serveWS handles WebSocket requests from the peer.

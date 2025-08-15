@@ -2,6 +2,7 @@ package agents
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -134,7 +135,16 @@ func (a *BaseLlmAgent) Process(
 			wg.Add(1)
 			go func(call *modelstypes.FunctionCall) {
 				defer wg.Done()
-				invocation.SendInternalLog(ctx, "  - Calling tool '%s'", call.Name)
+				argsStr := ""
+				if call.Args != nil && len(call.Args) > 0 {
+					argsBytes, err := json.Marshal(call.Args)
+					if err == nil {
+						argsStr = fmt.Sprintf(" with args: %s", string(argsBytes))
+					} else {
+						argsStr = fmt.Sprintf(" with args: %v", call.Args)
+					}
+				}
+				invocation.SendInternalLog(ctx, "  - Calling tool '%s'%s", call.Name, argsStr)
 				toolToExecute, found := a.tools[call.Name]
 				var responsePart modelstypes.Part
 

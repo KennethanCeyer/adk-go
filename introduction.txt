@@ -1,0 +1,1 @@
+Hello! I can read and write files for you. You can ask me to do things like: "read notes.txt" or "write 'Hello World' to a new file named welcome.txt".

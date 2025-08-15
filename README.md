@@ -1,24 +1,33 @@
 # ADK-Go: Agent Development Kit in Go (Migration In Progress)
 
 <html>
-  <h2 align="center">
-    <img src="https://raw.githubusercontent.com/google/adk-python/main/assets/agent-development-kit.png" width="256"/>
-  </h2>
-  <h3 align="center">
-    An open-source, code-first Go toolkit for building, evaluating, and deploying sophisticated AI agents with flexibility and control.
-  </h3>
-  <h3 align="center">
-    Important Links:
-    <a href="https://google.github.io/adk-docs/">Docs</a>
-  </h3>
+<h2 align="center">
+  <img src="https://raw.githubusercontent.com/google/adk-python/main/assets/agent-development-kit.png" width="256"/>
+</h2>
+<p align="center">
+  An open-source, code-first Go toolkit for building, evaluating, and deploying sophisticated AI agents with flexibility and control.
+</p>
+<p align="center">
+  <b>ADK(Agent Development Kit) Documents</b><br />
+  <a href="https://google.github.io/adk-docs/">Docs</a>,
+  <a href="https://github.com/KennethanCeyer/adk-go">Go ADK</a>,
+  <a href="https://github.com/google/adk-python">Python ADK</a>
+</p>
 </html>
 
-Welcome to ADK-Go
-This repository is a Go implementation of the Agent Development Kit (ADK), designed for building, evaluating, and deploying sophisticated AI agents. It provides a code-first, modular framework for creating complex multi-agent systems with deterministic control flows.
+## Welcome to ADK-Go
 
-This project is an ongoing effort to create a robust, performant, and idiomatic Go version of the original Python ADK. While many features are still being ported, the core functionality for building and running agents is in place.
+This repository is a Go implementation of the Agent Development Kit (ADK), providing a code-first, modular framework for creating complex multi-agent systems with deterministic control flows.
 
-This README provides instructions to set up the project, run the included examples, and understand the core concepts of building with ADK-Go.
+This project is an ongoing effort to create a robust, performant, and idiomatic Go version inspired by the official Python ADK. While many features are still being ported, the core functionality for building and running agents is in place.
+
+## Key Features
+
+- **Code-First Development**: Define agent logic, tools, and orchestration directly in Go for ultimate flexibility, testability, and versioning.
+- **Modular Multi-Agent Systems**: Design scalable applications by composing multiple specialized agents into flexible hierarchies.
+- **Rich Tool Ecosystem**: Equip agents with diverse capabilities by creating custom function tools.
+- **Integrated Developer UI**: A built-in web interface to test, debug, and showcase your agents locally.
+- **Flexible Orchestration**: Define complex agent workflows using built-in workflow agents (`SequentialAgent`, `ParallelAgent`, `LoopAgent`).
 
 ## Project Structure
 
@@ -30,35 +39,29 @@ adk-go/
 │   └── runner.go            # SimpleCLIRunner for command-line interaction
 ├── agents/                  # Core agent definitions and workflow agents
 │   ├── interfaces/
-│   │   └── interfaces.go
 │   └── invocation/
-│       └── context.go
-├── common/
-│   └── utils.go             # Common utility functions
 ├── cmd/
 │   └── adk/
 │       └── main.go          # Main CLI entrypoint for running agents
 ├── examples/                # Example agent implementations
 │   ├── file_based_chat/
 │   ├── helloworld/
+│   ├── financial_analyst/
+│   ├── looping_guesser/
 │   ├── parallel_trip_planner/
 │   ├── sequential_weather/
 │   └── registry.go          # Central registry for all example agents
 ├── llmproviders/            # LLM provider implementations and interfaces
-│   ├── gemini.go
-│   └── interfaces.go
 ├── models/
 │   └── types/
-│       └── types.go        # Core data structures (Message, Part, etc.)
+│       └── types.go         # Core data structures (Message, Part, etc.)
 ├── sessions/                # Session management for conversations
-│   ├── session.go
-│   └── store.go
 ├── tools/
-│   ├── interface.go
-│   ├── rolldie.go
-│   └── example/
-│       └── ... (flight_tool.go, hotel_tool.go, etc.)
+│   └── ...                  # Reusable tool definitions
 ├── web/                     # Web server and UI for agent interaction
+│   ├── graph/
+│   │   └── builder.go       # Logic to build agent graph visualizations
+│   ├── static/              # Static assets for the web UI (CSS, images, etc.)
 │   ├── handler.go
 │   ├── server.go
 │   └── index.html
@@ -75,15 +78,23 @@ As the migration progresses, other directories and files from your provided list
 - **Google Cloud Project**: A Google Cloud Project with the Vertex AI API (or Generative Language API via Google AI Studio) enabled.
 - **Gemini API Key**: An API key for Google Gemini.
   - Important: Secure your API key. Do not commit it directly into code. Use environment variables.
-- **Environment Variable**: Set the `GEMINI_API_KEY` environment variable.
 
-## Setup & Running the HelloWorld Agent
+## Installation
 
-1.  **Clone the Repository**
+The recommended way to use ADK-Go is to install the `adk` command-line tool. This allows you to run agents from anywhere in your terminal.
 
 ```bash
-git clone https://github.com/KennethanCeyer/adk-go.git
-cd adk-go
+go install github.com/KennethanCeyer/adk-go/cmd/adk@latest
+```
+
+Ensure your Go bin directory (typically `$GOPATH/bin` or `$HOME/go/bin`) is in your system's `PATH`.
+
+## Setup
+
+Before running any agent, you must configure your Gemini API Key.
+
+```bash
+export GEMINI_API_KEY="YOUR_API_KEY_HERE"
 ```
 
 2.  **Tidy Dependencies**
@@ -181,10 +192,19 @@ ADK will support workflow agents to orchestrate these interactions in a predicta
 
 These workflow agents provide deterministic control over the execution flow, while the sub-agents themselves can be intelligent `LlmAgent` instances.
 
-## Next Steps & Contribution
+## Contributing
 
-This "Hello World" example serves as the initial building block. The next steps in the migration will involve:
+This project is an active migration and we welcome contributions from the community! Whether it's reporting a bug, suggesting a feature, or submitting code, your help is valued.
 
-- Implementing more core ADK features (e.g., advanced agent types like `LoopAgent`, session management, event handling, complex flows).
-- Porting additional tools and planners.
-- Adding comprehensive tests.
+### How to Contribute
+
+- **Report Issues:** If you find a bug or have a feature request, please open an issue.
+- **Submit Pull Requests:** For code contributions, please fork the repository and submit a pull request with your changes.
+
+### Development Roadmap
+
+We are actively working on porting features from the Python ADK. Key areas for future development include implementing more core ADK features (e.g., advanced agent types, session management, event handling), porting additional tools and planners, and adding comprehensive tests. Contributions in these areas are especially welcome.
+
+## License
+
+ADK-Go is licensed under the Apache 2.0 License. See the `LICENSE` file for details.

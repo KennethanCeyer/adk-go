@@ -4,11 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ADK-Go Web UI</title>
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/static/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/static/favicon-16x16.png"
+    />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <link rel="icon" href="/static/favicon.ico" sizes="any" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -75,9 +85,13 @@
       }
 
       .sidebar-header {
-        padding: 1.5rem 1rem;
+        height: 100px;
+        box-sizing: border-box;
+        padding: 0 1.5rem;
         border-bottom: 1px solid var(--border-color);
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
       }
       .sidebar-header h2 {
         margin: 0;
@@ -109,6 +123,46 @@
         background-color: #e0eafc;
         border-left-color: var(--accent-color);
         font-weight: 600;
+      }
+      .agent-nav a.disabled {
+        color: #adb5bd; /* Muted color */
+        cursor: not-allowed;
+        background-color: transparent;
+      }
+      .session-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-right: 0.5rem; /* Space for the button */
+      }
+      .session-item a {
+        flex-grow: 1; /* Link takes up available space */
+        padding-right: 0.5rem;
+      }
+      .delete-session-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-secondary);
+        padding: 0.25rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.5;
+        visibility: hidden; /* Hide by default */
+        opacity: 0;
+        transition: opacity 0.2s, visibility 0.2s, background-color 0.2s;
+      }
+      .session-item:hover .delete-session-btn {
+        visibility: visible; /* Show on hover */
+        opacity: 1;
+      }
+      .delete-session-btn:hover {
+        background-color: #e9ecef;
+      }
+      .delete-session-btn .material-symbols-outlined {
+        font-size: 1rem; /* Smaller icon */
       }
 
       .session-header {
@@ -148,9 +202,14 @@
       }
 
       .sidebar-footer {
-        padding: 1rem;
+        height: 80px;
+        box-sizing: border-box;
+        padding: 1rem 1.5rem;
         border-top: 1px solid var(--border-color);
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       #new-chat-btn {
@@ -183,9 +242,14 @@
       }
 
       .chat-header {
-        padding: 1rem 1.5rem;
+        height: 100px;
+        box-sizing: border-box;
+        padding: 0 1.5rem;
         border-bottom: 1px solid var(--border-color);
         background-color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
       .chat-header h1 {
         margin: 0;
@@ -323,12 +387,17 @@
       }
 
       .chat-footer {
-        padding: 1rem 1.5rem;
+        height: 80px;
+        box-sizing: border-box;
+        padding: 0 1.5rem;
         border-top: 1px solid var(--border-color);
         background-color: #fff;
+        display: flex;
+        align-items: center;
       }
       #form {
         display: flex;
+        flex-grow: 1;
       }
       #input {
         border: 1px solid var(--border-color);
@@ -416,6 +485,10 @@
         border-radius: 4px;
         padding: 0.5rem;
       }
+      #graph-output .node.highlight polygon {
+        stroke: #d9480f; /* Highlight color (orange) */
+        stroke-width: 3px;
+      }
 
       /* Modal styles */
       .modal-overlay {
@@ -470,7 +543,7 @@
     <aside class="sidebar">
       <header class="sidebar-header">
         <img
-          src="/logo.png"
+          src="/static/logo.png"
           alt="ADK Logo"
           style="height: 24px; margin-right: 8px"
         />
@@ -818,11 +891,11 @@
           if (part.function_call) {
             const toolDiv = document.createElement("div");
             toolDiv.className = "tool-call";
-            const args = JSON.stringify(part.function_call.args, null, 2);
+            const args = JSON.stringify(part.function_call.args || {}, null, 2);
             toolDiv.innerHTML = `
               <div class="tool-header">
                 <span class="material-symbols-outlined">build</span>
-                Tool Call: ${part.function_call.name}
+                Calling Tool: <strong>${part.function_call.name}</strong>
               </div>
               <div class="tool-body"><pre>${args}</pre></div>`;
             messageBody.appendChild(toolDiv);
@@ -961,6 +1034,66 @@
           });
       }
 
+      function deleteSession(agentName, sessionId) {
+        if (
+          !confirm(
+            `Are you sure you want to delete session ${sessionId.substring(
+              0,
+              8
+            )}...?`
+          )
+        ) {
+          return;
+        }
+
+        fetch(`/api/session/${sessionId}`, {
+          method: "DELETE",
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log(`Session ${sessionId} deleted.`);
+              // Remove the item from the UI
+              const sessionItem = document.querySelector(
+                `.session-item[data-session-id="${sessionId}"]`
+              );
+              if (sessionItem) {
+                sessionItem.remove();
+              }
+
+              // If the deleted session was the active one, start a new chat
+              const urlParams = new URLSearchParams(window.location.search);
+              if (urlParams.get("sessionId") === sessionId) {
+                connectAgent(agentName, null); // Start a new session
+              }
+            } else {
+              alert(`Failed to delete session: ${response.statusText}`);
+            }
+          })
+          .catch((err) => {
+            console.error("Error deleting session:", err);
+            alert("An error occurred while deleting the session.");
+          });
+      }
+
+      function highlightGraphNode(nodeName) {
+        const graphOutput = document.getElementById("graph-output");
+        if (!graphOutput) return;
+
+        // Remove previous highlight.
+        const highlighted = graphOutput.querySelectorAll(".node.highlight");
+        highlighted.forEach((node) => node.classList.remove("highlight"));
+
+        // Find the new node to highlight. The node name is in the <title> tag.
+        const allNodes = graphOutput.querySelectorAll(".node");
+        for (const node of allNodes) {
+          const titleElement = node.querySelector("title");
+          if (titleElement && titleElement.textContent.trim() === nodeName) {
+            node.classList.add("highlight");
+            break; // Stop iterating once the node is found.
+          }
+        }
+      }
+
       function renderSessionList(agentName, sessionIds, activeSessionId) {
         const sessionList = document.getElementById("session-list");
         if (!sessionList) return;
@@ -977,7 +1110,14 @@
           return;
         }
 
-        sessionIds.reverse().forEach((id) => {
+        // Allow deletion only if there is more than one session.
+        const canDelete = sessionIds.length > 1;
+
+        sessionIds.forEach((id) => {
+          const sessionItem = document.createElement("div");
+          sessionItem.className = "session-item";
+          sessionItem.dataset.sessionId = id; // Add data attribute for easy removal
+
           const link = document.createElement("a");
           link.textContent = id.substring(0, 8) + "..."; // Shorten for display
           link.title = id;
@@ -987,7 +1127,22 @@
           link.onclick = () => {
             connectAgent(agentName, id);
           };
-          sessionList.appendChild(link);
+
+          sessionItem.appendChild(link);
+
+          if (canDelete) {
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-session-btn";
+            deleteBtn.innerHTML = `<span class="material-symbols-outlined">delete</span>`;
+            deleteBtn.title = "Delete session";
+            deleteBtn.onclick = (e) => {
+              e.stopPropagation(); // Prevent navigating to the session.
+              deleteSession(agentName, id);
+            };
+            sessionItem.appendChild(deleteBtn);
+          }
+
+          sessionList.appendChild(sessionItem);
         });
       }
 
@@ -1041,28 +1196,35 @@
       // Fetch agents on load
       fetch("/api/agents")
         .then((response) => response.json())
-
-        .then((agentNames) => {
+        .then((agents) => {
+          // Now receives an array of objects
           agentList.innerHTML = "";
           const urlParams = new URLSearchParams(window.location.search);
           const currentAgent = urlParams.get("agent");
           const currentSessionId = urlParams.get("sessionId");
 
-          agentNames.forEach((name) => {
+          agents.forEach((agent) => {
             const link = document.createElement("a");
-            link.textContent = name;
-            link.dataset.agentName = name;
-            if (name === currentAgent) {
+            link.textContent = agent.name;
+            link.dataset.agentName = agent.name;
+
+            if (!agent.initialized) {
+              link.classList.add("disabled");
+              link.title =
+                "Agent not initialized. Check server logs. GEMINI_API_KEY might be missing.";
+              link.onclick = (e) => e.preventDefault(); // Prevent clicking
+            } else {
+              link.onclick = () => {
+                document
+                  .querySelectorAll(".agent-nav a")
+                  .forEach((l) => l.classList.remove("active"));
+                link.classList.add("active");
+                connectAgent(agent.name, null); // Start a new session
+              };
+            }
+            if (agent.name === currentAgent) {
               link.classList.add("active");
             }
-            link.onclick = () => {
-              document
-                .querySelectorAll(".agent-nav a")
-                .forEach((l) => l.classList.remove("active"));
-              link.classList.add("active");
-              // Start a new session for this agent
-              connectAgent(name, null);
-            };
             agentList.appendChild(link);
           });
 

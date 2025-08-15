@@ -1,8 +1,6 @@
 package helloworld
 
 import (
-	"log"
-
 	"github.com/KennethanCeyer/adk-go/agents"
 	"github.com/KennethanCeyer/adk-go/examples"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
@@ -11,27 +9,27 @@ import (
 )
 
 func init() {
-	geminiProvider, err := llmproviders.NewGeminiLLMProvider()
+	provider, err := llmproviders.NewGeminiLLMProvider()
 	if err != nil {
-		log.Printf("Warning: Could not initialize 'helloworld' agent: %v. Ensure GEMINI_API_KEY is set.", err)
+		examples.RegisterAgent("helloworld", nil, err)
 		return
 	}
 
 	rollDieTool := tools.NewRollDieTool()
 	agentTools := []tools.Tool{rollDieTool}
 
-	systemInstructionText := "You are a friendly assistant. You can roll dice. When you use the rollDie tool, tell the user what was rolled and the die type (e.g., 'You rolled a 5 on a 6-sided die.')."
+	systemInstructionText := "You are a friendly assistant named HelloWorldAgent. Your special ability is to roll dice. When the conversation starts with a simple greeting, introduce yourself and ask if the user wants to roll a die. For example: 'Hi there! I'm the HelloWorldAgent. I can roll dice for you. Would you like to roll one?'. For other requests, use the rollDie tool and report the result clearly, like 'You rolled a 5 on a 6-sided die.'."
 	systemInstruction := &modelstypes.Message{
 		Parts: []modelstypes.Part{{Text: &systemInstructionText}},
 	}
 
 	agent := agents.NewBaseLlmAgent(
-		"HelloWorldAgent",
+		"helloworld",
 		"A simple agent that can roll a die using a tool.",
 		"gemini-2.5-flash",
 		systemInstruction,
-		geminiProvider,
+		provider,
 		agentTools,
 	)
-	examples.RegisterAgent("helloworld", agent)
+	examples.RegisterAgent("helloworld", agent, nil)
 }

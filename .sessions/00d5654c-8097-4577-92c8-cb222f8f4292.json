@@ -1,0 +1,27 @@
+{
+  "id": "00d5654c-8097-4577-92c8-cb222f8f4292",
+  "agent_name": "file_based_chat",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hi there! How can I help you today?"
+        }
+      ]
+    }
+  ],
+  "state": {
+    "last_agent_response_role": "model",
+    "last_agent_response_text": "Hi there! How can I help you today?",
+    "last_user_message": "Hi"
+  }
+}

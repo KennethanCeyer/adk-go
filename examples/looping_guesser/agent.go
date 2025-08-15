@@ -1,8 +1,6 @@
 package looping_guesser
 
 import (
-	"log"
-
 	"github.com/KennethanCeyer/adk-go/agents"
 	"github.com/KennethanCeyer/adk-go/examples"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
@@ -14,34 +12,29 @@ import (
 func init() {
 	geminiProvider, err := llmproviders.NewGeminiLLMProvider()
 	if err != nil {
-		log.Printf("Warning: Could not initialize 'looping_guesser' agent: %v. Ensure GEMINI_API_KEY is set.", err)
+		examples.RegisterAgent("looping_guesser", nil, err)
 		return
 	}
 
-	guesserInstructionText := `You are a number guessing bot that plays a number guessing game with the user. Your goal is to guess a secret number between 1 and 100 within 10 attempts.
+	guesserInstructionText := `You are a number guessing bot. Your goal is to guess a secret number between 1 and 100 within 10 attempts.
 
 **Game Flow:**
-1.  **Initiation:** When the user starts the conversation (e.g., with "Hi", "guess the number", or any other message), you MUST begin the game by making your first guess.
-2.  **First Guess:** Your first guess MUST always be 50. Use the 'check_guess' tool with the argument 'guess: 50'.
-3.  **Subsequent Guesses:** For every subsequent turn, you will receive a tool response with a 'status' of 'too_low', 'too_high', or 'correct'.
-    - Based on this status and the history of your guesses, you must make a new, logical guess to narrow down the range of possible numbers.
-    - Announce the result of the previous guess (e.g., "50 was too high.") and then immediately make your next guess by calling the 'check_guess' tool again.
-4.  **Winning:** If the tool response status is 'correct', you have won. Your final response MUST be "I guessed the number! I win!".
-5.  **Losing:** You have a maximum of 10 tool calls to 'check_guess'. If you have not guessed the number after 10 attempts, your final response MUST be "I have failed to guess the number in 10 tries. I admit defeat.".
+1.  **Greeting Phase:** If the user's message is a simple greeting (like "Hi", "Hello"), your ONLY action is to respond with a greeting and ask if they want to play. Your response MUST be something like: "Hello! Would you like to play a number guessing game?". You MUST NOT call any tools in this case.
+2.  **Starting the game:** If the user agrees to play (e.g., "yes", "let's play"), you MUST start the game. Announce that you are starting and make your first guess, which must be 50. For example: "Okay, I'm starting the game! My first guess is 50.". Then, you MUST call the 'check_guess' tool with 'guess: 50'.
+3.  **Continuing the game:** After the 'check_guess' tool returns a result ('too_low' or 'too_high'), you must immediately make a new, logical guess using binary search based on the history. Announce the result of the previous guess and your new guess in one message. For example: "50 was too high. My next guess is 25.". Then, call the 'check_guess' tool with your new guess.
+4.  **Winning:** If the tool response status is 'correct', you have won. Your final response MUST be "I guessed the number! I win!". Do not call any more tools.
 
-**Important Rules:**
-- Always use the 'check_guess' tool to make a guess.
-- Do not make up results. Your actions are driven by the tool responses.`
+**Important:** The user's role is just to start the game. Once started, you will play automatically by repeatedly calling the 'check_guess' tool until you win or lose.`
 	guesserInstruction := &modelstypes.Message{Parts: []modelstypes.Part{{Text: &guesserInstructionText}}}
 
 	guesserAgent := agents.NewBaseLlmAgent(
 		"looping_guesser",
-		"An agent that plays a number guessing game.",
+		"An agent that plays a number guessing game automatically.",
 		"gemini-2.5-flash",
 		guesserInstruction,
 		geminiProvider,
 		[]tools.Tool{example.NewNumberGuesserTool()},
 	)
 
-	examples.RegisterAgent("looping_guesser", guesserAgent)
+	examples.RegisterAgent("looping_guesser", guesserAgent, nil)
 }

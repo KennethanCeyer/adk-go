@@ -1,8 +1,6 @@
 package parallel_trip_planner
 
 import (
-	"log"
-
 	"github.com/KennethanCeyer/adk-go/agents"
 	"github.com/KennethanCeyer/adk-go/agents/interfaces"
 	"github.com/KennethanCeyer/adk-go/examples"
@@ -15,7 +13,7 @@ import (
 func init() {
 	geminiProvider, err := llmproviders.NewGeminiLLMProvider()
 	if err != nil {
-		log.Printf("Warning: Could not initialize 'parallel_trip_planner' agent: %v. Ensure GEMINI_API_KEY is set.", err)
+		examples.RegisterAgent("parallel_trip_planner", nil, err)
 		return
 	}
 
@@ -56,5 +54,5 @@ func init() {
 		[]interfaces.LlmAgent{flightAgent, hotelAgent},
 	)
 
-	examples.RegisterAgent("parallel_trip_planner", tripPlannerAgent)
+	examples.RegisterAgent("parallel_trip_planner", tripPlannerAgent, nil)
 }
