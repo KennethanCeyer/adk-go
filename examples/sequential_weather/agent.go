@@ -16,9 +16,7 @@ func init() {
 		return
 	}
 
-	// This example is now a single, more capable agent instead of a sequential workflow.
-	// This provides a more natural and efficient user experience for this specific use case,
-	// addressing the issue of running unnecessary sub-agents for simple greetings.
+	// This example uses a single, capable agent instead of a sequential workflow for efficiency.
 	instructionText := "You are a friendly and helpful weather assistant. When the conversation starts with a simple greeting, introduce yourself and ask which city's weather they'd like to know. For example: 'Hello! I can get the latest weather report for you. Which city are you interested in?'. If the user asks for the weather directly, use the `getWeather` tool to provide the information. If the user is just making small talk, respond conversationally. Be concise and friendly."
 	systemInstruction := &modelstypes.Message{Parts: []modelstypes.Part{{Text: &instructionText}}}
 

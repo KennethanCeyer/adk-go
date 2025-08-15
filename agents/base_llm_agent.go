@@ -6,16 +6,18 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/KennethanCeyer/adk-go/agents/callbacks"
 	"github.com/KennethanCeyer/adk-go/agents/invocation"
 
 	"github.com/KennethanCeyer/adk-go/agents/interfaces"
 	"github.com/KennethanCeyer/adk-go/llmproviders"
+	"github.com/KennethanCeyer/adk-go/models"
 	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
 	"github.com/KennethanCeyer/adk-go/tools"
 )
 
-// BaseLlmAgent provides a foundational implementation of the LlmAgent interface.
-// It handles the core logic of interacting with an LLM, including tool use.
+// BaseLlmAgent provides a foundational implementation of the LlmAgent interface,
+// handling the core logic of interacting with an LLM, including tool use.
 type BaseLlmAgent struct {
 	name              string
 	description       string
@@ -23,6 +25,14 @@ type BaseLlmAgent struct {
 	systemInstruction *modelstypes.Message
 	llmProvider       llmproviders.LLMProvider
 	tools             map[string]tools.Tool
+
+	// Callbacks
+	BeforeAgentCallback  callbacks.BeforeAgentCallback
+	AfterAgentCallback   callbacks.AfterAgentCallback
+	BeforeModelCallback  callbacks.BeforeModelCallback
+	AfterModelCallback   callbacks.AfterModelCallback
+	BeforeToolCallback   callbacks.BeforeToolCallback
+	AfterToolCallback    callbacks.AfterToolCallback
 }
 
 // NewBaseLlmAgent creates and initializes a new BaseLlmAgent.
@@ -74,8 +84,8 @@ func (a *BaseLlmAgent) GetTools() []tools.Tool {
 // GetLLMProvider returns the LLM provider used by the agent.
 func (a *BaseLlmAgent) GetLLMProvider() llmproviders.LLMProvider { return a.llmProvider }
 
-// Process handles the main interaction loop with the LLM, including tool execution.
-// It will continue to call the LLM with tool results until a final text response is generated.
+// Process handles the main interaction loop with the LLM, including tool execution,
+// until a final text response is generated.
 func (a *BaseLlmAgent) Process(
 	ctx context.Context,
 	history []modelstypes.Message,
@@ -85,37 +95,78 @@ func (a *BaseLlmAgent) Process(
 		return nil, fmt.Errorf("agent '%s' has no LLM provider configured", a.name)
 	}
 
+	callbackCtx := &callbacks.CallbackContext{
+		AgentName: a.GetName(),
+		InvocationID: invocation.FromContext(ctx).ID,
+		SessionState: nil, // TODO: Implement session state access
+		UserContent:  &latestMessage,
+	}
+
+	// Execute BeforeAgentCallback
+	if a.BeforeAgentCallback != nil {
+		if overrideResponse := a.BeforeAgentCallback(callbackCtx); overrideResponse != nil {
+			return overrideResponse, nil
+		}
+	}
+
 	turnHistory := make([]modelstypes.Message, len(history))
 	copy(turnHistory, history)
 
 	currentMessage := latestMessage
 
-	// Loop for potential tool calls. Set a max number of tool calls per turn to avoid infinite loops.
-	const maxToolCalls = 10 // Increased to support the looping_guesser example
+	// Loop for potential tool calls. Set a max number of calls per turn to avoid infinite loops.
+	const maxToolCalls = 10
 	for i := 0; i < maxToolCalls; i++ {
-		llmResponse, err := a.llmProvider.GenerateContent(
-			ctx,
-			a.modelIdentifier,
-			a.systemInstruction,
-			a.GetTools(),
-			turnHistory,
-			currentMessage,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("LLM interaction failed: %w", err)
+		llmReq := &models.LlmRequest{
+			ModelIdentifier:   a.modelIdentifier,
+			SystemInstruction: a.systemInstruction,
+			Tools:             a.GetTools(),
+			History:           turnHistory,
+			LatestMessage:     currentMessage,
+		}
+
+		// Execute BeforeModelCallback
+		var llmResponse *models.LlmResponse
+		if a.BeforeModelCallback != nil {
+			llmResponse = a.BeforeModelCallback(callbackCtx, llmReq)
+		}
+
+		if llmResponse != nil {
+			// Callback provided a response, skip actual LLM call
+			invocation.SendInternalLog(ctx, "Agent '%s' model call was overridden by a callback.", a.name)
+		} else {
+			// No override, call the LLM provider
+			llmResponseMsg, err := a.llmProvider.GenerateContent(
+				ctx,
+				llmReq.ModelIdentifier,
+				llmReq.SystemInstruction,
+				llmReq.Tools,
+				llmReq.History,
+				llmReq.LatestMessage,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("LLM interaction failed: %w", err)
+			}
+			llmResponse = &models.LlmResponse{Content: llmResponseMsg}
+		}
+
+		// Execute AfterModelCallback
+		if a.AfterModelCallback != nil {
+			if modifiedResponse := a.AfterModelCallback(callbackCtx, llmResponse); modifiedResponse != nil {
+				llmResponse = modifiedResponse
+			}
+		}
+
+		if llmResponse.Content == nil {
+			return nil, fmt.Errorf("LLM returned a nil response content")
 		}
 
 		turnHistory = append(turnHistory, currentMessage)
-		if llmResponse != nil {
-			turnHistory = append(turnHistory, *llmResponse)
-		} else {
-			// Should not happen, but handle defensively
-			return nil, fmt.Errorf("LLM returned a nil response")
-		}
+		turnHistory = append(turnHistory, *llmResponse.Content)
 
 		// A single model response can request multiple tool calls.
 		var functionCalls []*modelstypes.FunctionCall
-		for _, part := range llmResponse.Parts {
+		for _, part := range llmResponse.Content.Parts {
 			if part.FunctionCall != nil {
 				functionCalls = append(functionCalls, part.FunctionCall)
 			}
@@ -123,7 +174,13 @@ func (a *BaseLlmAgent) Process(
 
 		// If there are no function calls, the agent's turn is over. Return the text response.
 		if len(functionCalls) == 0 {
-			return llmResponse, nil
+			// Execute AfterAgentCallback
+			if a.AfterAgentCallback != nil {
+				if finalResponse := a.AfterAgentCallback(callbackCtx, llmResponse.Content); finalResponse != nil {
+					return finalResponse, nil
+				}
+			}
+			return llmResponse.Content, nil
 		}
 
 		var wg sync.WaitGroup
@@ -153,14 +210,35 @@ func (a *BaseLlmAgent) Process(
 					invocation.SendInternalLog(ctx, "  - Error: %s", errText)
 					responsePart = modelstypes.Part{FunctionResponse: &modelstypes.FunctionResponse{Name: call.Name, Response: map[string]any{"error": errText}}}
 				} else {
+					// Execute BeforeToolCallback
+					if a.BeforeToolCallback != nil {
+						if modifiedArgs := a.BeforeToolCallback(callbackCtx, toolToExecute, call.Args); modifiedArgs != nil {
+							call.Args = modifiedArgs
+						}
+					}
+
 					toolResult, err := toolToExecute.Execute(ctx, call.Args)
 					if err != nil {
 						errText := fmt.Sprintf("tool '%s' execution failed: %v", toolToExecute.Name(), err)
 						invocation.SendInternalLog(ctx, "  - Error: %s", errText)
 						responsePart = modelstypes.Part{FunctionResponse: &modelstypes.FunctionResponse{Name: call.Name, Response: map[string]any{"error": errText}}}
 					} else {
-						invocation.SendInternalLog(ctx, "  - Tool '%s' executed successfully", toolToExecute.Name())
-						responsePart = modelstypes.Part{FunctionResponse: &modelstypes.FunctionResponse{Name: call.Name, Response: toolResult}}
+						// The result from a tool must be a map[string]any to be used in the FunctionResponse.
+						toolResultMap, ok := toolResult.(map[string]any)
+						if !ok {
+							errText := fmt.Sprintf("tool '%s' result is not a map[string]any, but %T", toolToExecute.Name(), toolResult)
+							invocation.SendInternalLog(ctx, "  - Error: %s", errText)
+							responsePart = modelstypes.Part{FunctionResponse: &modelstypes.FunctionResponse{Name: call.Name, Response: map[string]any{"error": errText}}}
+						} else {
+							// Execute AfterToolCallback
+							if a.AfterToolCallback != nil {
+								if modifiedResult := a.AfterToolCallback(callbackCtx, toolToExecute, call.Args, toolResultMap); modifiedResult != nil {
+									toolResultMap = modifiedResult
+								}
+							}
+							invocation.SendInternalLog(ctx, "  - Tool '%s' executed successfully", toolToExecute.Name())
+							responsePart = modelstypes.Part{FunctionResponse: &modelstypes.FunctionResponse{Name: call.Name, Response: toolResultMap}}
+						}
 					}
 				}
 				toolResponseParts <- responsePart
@@ -180,5 +258,12 @@ func (a *BaseLlmAgent) Process(
 		currentMessage = toolResponseMessage
 	}
 
+	// If loop finishes, it means max tool calls exceeded. Before returning error, call AfterAgentCallback.
+	if a.AfterAgentCallback != nil {
+		// Pass nil as there's no final successful response
+		if finalResponse := a.AfterAgentCallback(callbackCtx, nil); finalResponse != nil {
+			return finalResponse, nil
+		}
+	}
 	return nil, fmt.Errorf("exceeded maximum tool calls (%d) in a single turn", maxToolCalls)
 }

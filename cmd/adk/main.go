@@ -15,8 +15,7 @@ import (
 	"github.com/KennethanCeyer/adk-go/sessions"
 	"github.com/KennethanCeyer/adk-go/web"
 
-	// Import example packages to trigger their init() functions for agent registration.
-	// The blank identifier `_` is used because we only need the side effects of the import.
+	// Import example packages to trigger their init() functions.
 	_ "github.com/KennethanCeyer/adk-go/examples/file_based_chat"
 	_ "github.com/KennethanCeyer/adk-go/examples/financial_analyst"
 	_ "github.com/KennethanCeyer/adk-go/examples/helloworld"
@@ -80,7 +79,7 @@ func runCmd(args []string) {
 		}
 		log.Printf("Successfully resumed session '%s'.", *sessionID)
 	} else {
-		currentSession = sessions.GetOrCreate(*agentName, *sessionID) // Create a new session
+		currentSession = sessions.GetOrCreate(*agentName, *sessionID)
 		log.Printf("Started new session with ID: %s", currentSession.ID)
 		log.Println("To resume this session later, use: -session-id=" + currentSession.ID)
 	}

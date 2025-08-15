@@ -26,7 +26,6 @@ func Build(agent interfaces.LlmAgent) string {
 func buildNode(sb *strings.Builder, agent interfaces.LlmAgent) {
 	agentID := sanitizeID(agent.GetName())
 
-	// Define the node for the current agent
 	switch a := agent.(type) {
 	case *agents.BaseLlmAgent:
 		sb.WriteString(fmt.Sprintf("  %s [label=\"%s\\n(LLM Agent)\", fillcolor=\"#e0eafc\"];\n", agentID, agent.GetName()))
@@ -57,15 +56,26 @@ func buildNode(sb *strings.Builder, agent interfaces.LlmAgent) {
 		}
 	case *agents.LoopAgent:
 		sb.WriteString(fmt.Sprintf("  %s [label=\"%s\\n(Loop Workflow)\", fillcolor=\"#d1e7dd\"];\n", agentID, agent.GetName()))
-		subAgentID := sanitizeID(a.SubAgent.GetName())
-		buildNode(sb, a.SubAgent)
-		sb.WriteString(fmt.Sprintf("  %s -> %s [label=\"start loop\"];\n", agentID, subAgentID))
-		sb.WriteString(fmt.Sprintf("  %s -> %s [label=\"repeat\", style=dashed, constraint=false];\n", subAgentID, subAgentID))
+		var prevSubAgentID string
+		var firstSubAgentID string
+		for i, subAgent := range a.SubAgents {
+			subAgentID := sanitizeID(subAgent.GetName())
+			buildNode(sb, subAgent)
+			if i == 0 {
+				firstSubAgentID = subAgentID
+				sb.WriteString(fmt.Sprintf("  %s -> %s [label=\"start loop\"];\n", agentID, subAgentID))
+			} else {
+				sb.WriteString(fmt.Sprintf("  %s -> %s [label=\"next\"];\n", prevSubAgentID, subAgentID))
+			}
+			prevSubAgentID = subAgentID
+		}
+		if prevSubAgentID != "" && firstSubAgentID != "" {
+			sb.WriteString(fmt.Sprintf("  %s -> %s [label=\"repeat\", style=dashed, constraint=false];\n", prevSubAgentID, firstSubAgentID))
+		}
 	}
 }
 
 func sanitizeID(name string) string {
-	// DOT IDs cannot contain spaces or special characters.
 	r := strings.NewReplacer(" ", "_", "-", "_", ".", "_")
 	return r.Replace(name)
 }

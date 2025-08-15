@@ -1,27 +1,20 @@
 package models
 
-import "github.com/KennethanCeyer/adk-go/models/types"
-
-// Content is a generic container for data passed between components.
-// It is similar to types.Message but used in different contexts like
-// system instructions or LLM responses.
-type Content struct {
-	Parts []types.Part
-	Role  string
-}
-
-// GenerateContentConfig holds configuration for content generation by the LLM.
-type GenerateContentConfig struct {
-	SystemInstruction *Content
-	// Other potential fields: Temperature, TopP, TopK, MaxOutputTokens, etc.
-}
+import (
+	modelstypes "github.com/KennethanCeyer/adk-go/models/types"
+	"github.com/KennethanCeyer/adk-go/tools"
+)
 
 // LlmRequest represents a request to be sent to the LLM, primarily for configuration.
 type LlmRequest struct {
-	Config *GenerateContentConfig
+	ModelIdentifier   string
+	SystemInstruction *modelstypes.Message
+	Tools             []tools.Tool
+	History           []modelstypes.Message
+	LatestMessage     modelstypes.Message
 }
 
 // LlmResponse represents a response received from the LLM.
 type LlmResponse struct {
-	Content *Content
+	Content *modelstypes.Message
 }

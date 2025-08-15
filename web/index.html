@@ -891,11 +891,11 @@
           if (part.function_call) {
             const toolDiv = document.createElement("div");
             toolDiv.className = "tool-call";
-            const args = JSON.stringify(part.function_call.args || {}, null, 2);
+            const args = JSON.stringify(part.function_call.args, null, 2);
             toolDiv.innerHTML = `
               <div class="tool-header">
                 <span class="material-symbols-outlined">build</span>
-                Calling Tool: <strong>${part.function_call.name}</strong>
+                Tool Call: ${part.function_call.name}
               </div>
               <div class="tool-body"><pre>${args}</pre></div>`;
             messageBody.appendChild(toolDiv);

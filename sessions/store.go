@@ -11,14 +11,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// Global session store instance.
 var store = &SessionStore{
 	mu:              sync.RWMutex{},
 	sessions:        make(map[string]*Session),
 	sessionsByAgent: make(map[string]map[string]struct{}),
 }
 
-// SessionStore manages all active sessions in memory.
 type SessionStore struct {
 	mu              sync.RWMutex
 	sessions        map[string]*Session
